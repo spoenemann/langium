@@ -5,11 +5,16 @@
  ******************************************************************************/
 
 import {
-    createDefaultModule, createDefaultSharedModule, DefaultSharedModuleContext, inject,
+    AbstractExecuteCommandHandler,
+    AstNode,
+    createDefaultModule, createDefaultSharedModule, DefaultSharedModuleContext, inject, EmptyFileSystem, ExecuteCommandAcceptor,
     LangiumServices, LangiumSharedServices, Module, PartialLangiumServices
 } from 'langium';
+import { Statemachine } from './generated/ast';
 import { StatemachineGeneratedModule, StatemachineGeneratedSharedModule } from './generated/module';
 import { StatemachineValidationRegistry, StatemachineValidator } from './statemachine-validator';
+import { URI } from 'vscode-uri';
+import { generateCpp } from '../cli/generator';
 
 /**
  * Declaration of custom services - add your own service classes here.
@@ -39,6 +44,39 @@ export const StatemachineModule: Module<StatemachineServices, PartialLangiumServ
 };
 
 /**
+ * Parses a concrete state machine program & produces a generated result
+ * @param statemachineProgram Concrete statemachine program to parse & generate from
+ * @returns A generated output, suitable for passing in an LSP custom command's response
+ */
+export async function parseAndGenerate(statemachineProgram: string): Promise<string> {
+    const services = createStatemachineServices(EmptyFileSystem).statemachine;
+    const statemachine = await extractAstNodeFromString<Statemachine>(statemachineProgram, services);
+    const cppData = generateCpp(statemachine);
+    return Promise.resolve(cppData);
+}
+
+class StatemachineCommandHandler extends AbstractExecuteCommandHandler {
+    registerCommands(acceptor: ExecuteCommandAcceptor): void {
+        // register 'parseAndGenerate' command, accepts a single program arg as a string
+        acceptor('parseAndGenerate', args => {
+            return parseAndGenerate(args[0]);
+        });
+    }
+}
+
+/**
+ * Extracts an AST node from a virtual document, represented as a string
+ * @param content Content to create virtual document from
+ * @param services For constructing & building a virtual document
+ * @returns A promise for the parsed result of the document
+ */
+async function extractAstNodeFromString<T extends AstNode>(content: string, services: LangiumServices): Promise<T> {
+    const doc = services.shared.workspace.LangiumDocumentFactory.fromString(content, URI.parse('memory://minilogo.document'));
+    await services.shared.workspace.DocumentBuilder.build([doc], { validationChecks: 'all' });
+    return doc.parseResult?.value as T;
+}
+
+/**
  * Create the full set of services required by Langium.
  *
  * First inject the shared services by merging two modules:
@@ -66,6 +104,8 @@ export function createStatemachineServices(context: DefaultSharedModuleContext):
         StatemachineGeneratedModule,
         StatemachineModule
     );
+    // simply register the handler here
+    shared.lsp.ExecuteCommandHandler = new StatemachineCommandHandler();
     shared.ServiceRegistry.register(statemachine);
     return { shared, statemachine };
 }

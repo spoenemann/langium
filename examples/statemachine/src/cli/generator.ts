@@ -4,18 +4,18 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import fs from 'fs';
+//import fs from 'fs';
 import { CompositeGeneratorNode, NL, processGeneratorNode } from 'langium';
 import { State, Statemachine } from '../language-server/generated/ast';
-import { extractDestinationAndName } from './cli-util';
-import path from 'path';
+//import { extractDestinationAndName } from './cli-util';
+//import path from 'path';
 
-export function generateCpp(statemachine: Statemachine, filePath: string, destination: string | undefined): string {
-    const data = extractDestinationAndName(filePath, destination);
+export function generateCpp(statemachine: Statemachine): string {
+    //const data = extractDestinationAndName(filePath, destination);
     const ctx = <GeneratorContext>{
         statemachine,
-        fileName: `${data.name}.cpp`,
-        destination: data.destination,
+        //fileName: `${data.name}.cpp`,
+        //destination: data.destination,
         fileNode: new CompositeGeneratorNode()
     };
     return generate(ctx);
@@ -23,8 +23,8 @@ export function generateCpp(statemachine: Statemachine, filePath: string, destin
 
 interface GeneratorContext {
     statemachine: Statemachine;
-    fileName: string;
-    destination: string;
+    //fileName: string;
+    //destination: string;
     fileNode: CompositeGeneratorNode
 }
 
@@ -56,12 +56,13 @@ function generate(ctx: GeneratorContext): string {
 
     generateMain(ctx);
 
-    if (!fs.existsSync(ctx.destination)) {
-        fs.mkdirSync(ctx.destination, { recursive: true });
-    }
-    const generatedFilePath = path.join(ctx.destination, ctx.fileName);
-    fs.writeFileSync(generatedFilePath, processGeneratorNode(ctx.fileNode));
-    return generatedFilePath;
+    // if (!fs.existsSync(ctx.destination)) {
+    //     fs.mkdirSync(ctx.destination, { recursive: true });
+    // }
+    //const generatedFilePath = path.join(ctx.destination, ctx.fileName);
+    return processGeneratorNode(ctx.fileNode);
+    //fs.writeFileSync(generatedFilePath, processGeneratorNode(ctx.fileNode));
+    //return generatedFilePath;
 }
 
 function generateStateClass(ctx: GeneratorContext): void {
