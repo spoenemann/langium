@@ -10,10 +10,11 @@ import { CompositeGeneratorNode, NL, toString } from '../../../generator/generat
 import { distinctAndSorted } from '../types-util.js';
 
 export interface Property {
-    name: string,
-    optional: boolean,
-    type: PropertyType,
-    astNodes: Set<Assignment | Action | TypeAttribute>,
+    name: string;
+    optional: boolean;
+    type: PropertyType;
+    defaultValue?: string | number | boolean;
+    astNodes: Set<Assignment | Action | TypeAttribute>;
 }
 
 export type PropertyType =

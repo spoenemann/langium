@@ -16,13 +16,21 @@ entry Grammar:
 Interface:
     'interface' name=ID
     ('extends' superTypes+=[AbstractType:ID] (',' superTypes+=[AbstractType:ID])*)?
-    SchemaType;
-
-fragment SchemaType:
-    '{' attributes+=TypeAttribute* '}' ';'?;
+    '{' 
+        attributes+=TypeAttribute* 
+    '}' 
+';'?;
 
 TypeAttribute:
-    name=FeatureName (isOptional?='?')? ':' type=TypeDefinition ';'?;
+    name=FeatureName (isOptional?='?')? ':' type=TypeDefinition ('=' defaultValue=ValueLiteral)? ';'?;
+
+ValueLiteral:
+    StringLiteral | NumberLiteral | LiteralCondition;
+
+StringLiteral:
+    value=STRING;
+NumberLiteral:
+    value=NUMBER;
 
 TypeDefinition: UnionType;
 
@@ -209,10 +217,11 @@ CharacterRange infers AbstractElement:
     {infer CharacterRange} left=Keyword ('..' right=Keyword)?;
 
 FeatureName returns string:
-    'current' | 'entry' | 'extends' | 'false' | 'fragment' | 'grammar' | 'hidden' | 'import' | 'interface' | 'returns' | 'terminal' | 'true' | 'type' | 'infer' | 'infers' | 'with' | PrimitiveType | ID;
+    'Infinity' | 'NaN' | 'undefined' | 'current' | 'entry' | 'extends' | 'false' | 'fragment' | 'grammar' | 'hidden' | 'import' | 'interface' | 'returns' | 'terminal' | 'true' | 'type' | 'infer' | 'infers' | 'with' | PrimitiveType | ID;
 
 terminal ID: /\^?[_a-zA-Z][\w_]*/;
 terminal STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/;
+terminal NUMBER returns number: /NaN|-?((\d*\.\d+|\d+)([Ee][+-]?\d+)?|Infinity)/;
 terminal RegexLiteral returns string: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\/[a-z]*/;
 
 hidden terminal WS: /\s+/;

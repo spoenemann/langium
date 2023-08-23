@@ -289,6 +289,45 @@ describe('validate declared types', () => {
         `);
         expect(validationResult.diagnostics).toHaveLength(0);
     });
+
+    test('Validate incorrect default value assignment with number', async () => {
+        const validationResult = await validate(`
+            interface Test {
+                value: number = true;
+            }
+        `);
+        expect(validationResult.diagnostics).toHaveLength(1);
+        const grammar = validationResult.document.parseResult.value;
+        expectError(validationResult, "Cannot assign default value of type 'boolean' to type 'number'.", {
+            node: grammar.interfaces[0].attributes[0],
+            property: 'defaultValue'
+        });
+    });
+
+    test('Validate correct default value assignment with number', async () => {
+        const validationResult = await validate(`
+            interface Test {
+                value: number = 123;
+            }
+        `);
+        expectNoIssues(validationResult);
+    });
+
+    test('Validate incorrect default value assignment with string constant', async () => {
+        const validationResult = await validate(`
+            interface Test {
+                value: "A" | "B" = "C";
+            }
+        `);
+        expect(validationResult.diagnostics).toHaveLength(1);
+        const grammar = validationResult.document.parseResult.value;
+        // eslint-disable-next-line quotes
+        expectError(validationResult, `Cannot assign default value of type '"C"' to type '"A" | "B"'.`, {
+            node: grammar.interfaces[0].attributes[0],
+            property: 'defaultValue'
+        });
+    });
+
 });
 
 describe('validate actions that use declared types', () => {

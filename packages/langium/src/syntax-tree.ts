@@ -207,7 +207,8 @@ export interface TypeMetaData {
  */
 export interface TypeMandatoryProperty {
     name: string
-    type: 'array' | 'boolean'
+    type: 'array' | 'primitive'
+    defaultValue?: number | string | boolean
 }
 
 /**

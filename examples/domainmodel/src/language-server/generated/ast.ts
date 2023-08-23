@@ -169,7 +169,7 @@ export class DomainModelAstReflection extends AbstractAstReflection {
                 return {
                     name: 'Feature',
                     mandatory: [
-                        { name: 'many', type: 'boolean' }
+                        { name: 'many', type: 'primitive', defaultValue: false }
                     ]
                 };
             }

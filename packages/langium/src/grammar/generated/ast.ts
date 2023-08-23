@@ -10,6 +10,7 @@ import { AbstractAstReflection } from '../../syntax-tree.js';
 export const LangiumGrammarTerminals = {
     ID: /\^?[_a-zA-Z][\w_]*/,
     STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/,
+    NUMBER: /NaN|-?((\d*\.\d+|\d+)([Ee][+-]?\d+)?|Infinity)/,
     RegexLiteral: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\/[a-z]*/,
     WS: /\s+/,
     ML_COMMENT: /\/\*[\s\S]*?\*\//,
@@ -40,10 +41,10 @@ export function isCondition(item: unknown): item is Condition {
     return reflection.isInstance(item, Condition);
 }
 
-export type FeatureName = 'current' | 'entry' | 'extends' | 'false' | 'fragment' | 'grammar' | 'hidden' | 'import' | 'infer' | 'infers' | 'interface' | 'returns' | 'terminal' | 'true' | 'type' | 'with' | PrimitiveType | string;
+export type FeatureName = 'Infinity' | 'NaN' | 'current' | 'entry' | 'extends' | 'false' | 'fragment' | 'grammar' | 'hidden' | 'import' | 'infer' | 'infers' | 'interface' | 'returns' | 'terminal' | 'true' | 'type' | 'undefined' | 'with' | PrimitiveType | string;
 
 export function isFeatureName(item: unknown): item is FeatureName {
-    return isPrimitiveType(item) || item === 'current' || item === 'entry' || item === 'extends' || item === 'false' || item === 'fragment' || item === 'grammar' || item === 'hidden' || item === 'import' || item === 'interface' || item === 'returns' || item === 'terminal' || item === 'true' || item === 'type' || item === 'infer' || item === 'infers' || item === 'with' || (typeof item === 'string' && (/\^?[_a-zA-Z][\w_]*/.test(item)));
+    return isPrimitiveType(item) || item === 'Infinity' || item === 'NaN' || item === 'undefined' || item === 'current' || item === 'entry' || item === 'extends' || item === 'false' || item === 'fragment' || item === 'grammar' || item === 'hidden' || item === 'import' || item === 'interface' || item === 'returns' || item === 'terminal' || item === 'true' || item === 'type' || item === 'infer' || item === 'infers' || item === 'with' || (typeof item === 'string' && (/\^?[_a-zA-Z][\w_]*/.test(item)));
 }
 
 export type PrimitiveType = 'Date' | 'bigint' | 'boolean' | 'number' | 'string';
@@ -60,8 +61,16 @@ export function isTypeDefinition(item: unknown): item is TypeDefinition {
     return reflection.isInstance(item, TypeDefinition);
 }
 
+export type ValueLiteral = LiteralCondition | NumberLiteral | StringLiteral;
+
+export const ValueLiteral = 'ValueLiteral';
+
+export function isValueLiteral(item: unknown): item is ValueLiteral {
+    return reflection.isInstance(item, ValueLiteral);
+}
+
 export interface AbstractElement extends AstNode {
-    readonly $type: 'AbstractElement' | 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'EndOfFile' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard';
+    readonly $type: 'AbstractElement' | 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard';
     cardinality?: '*' | '+' | '?'
     lookahead?: '?!' | '?='
 }
@@ -168,7 +177,7 @@ export function isInterface(item: unknown): item is Interface {
 }
 
 export interface LiteralCondition extends AstNode {
-    readonly $container: Conjunction | Disjunction | Group | NamedArgument | Negation;
+    readonly $container: Conjunction | Disjunction | Group | NamedArgument | Negation | TypeAttribute;
     readonly $type: 'LiteralCondition';
     true: boolean
 }
@@ -203,6 +212,18 @@ export const Negation = 'Negation';
 
 export function isNegation(item: unknown): item is Negation {
     return reflection.isInstance(item, Negation);
+}
+
+export interface NumberLiteral extends AstNode {
+    readonly $container: TypeAttribute;
+    readonly $type: 'NumberLiteral';
+    value: number
+}
+
+export const NumberLiteral = 'NumberLiteral';
+
+export function isNumberLiteral(item: unknown): item is NumberLiteral {
+    return reflection.isInstance(item, NumberLiteral);
 }
 
 export interface Parameter extends AstNode {
@@ -289,6 +310,18 @@ export function isSimpleType(item: unknown): item is SimpleType {
     return reflection.isInstance(item, SimpleType);
 }
 
+export interface StringLiteral extends AstNode {
+    readonly $container: TypeAttribute;
+    readonly $type: 'StringLiteral';
+    value: string
+}
+
+export const StringLiteral = 'StringLiteral';
+
+export function isStringLiteral(item: unknown): item is StringLiteral {
+    return reflection.isInstance(item, StringLiteral);
+}
+
 export interface TerminalRule extends AstNode {
     readonly $container: Grammar;
     readonly $type: 'TerminalRule';
@@ -321,6 +354,7 @@ export function isType(item: unknown): item is Type {
 export interface TypeAttribute extends AstNode {
     readonly $container: Interface;
     readonly $type: 'TypeAttribute';
+    defaultValue?: ValueLiteral
     isOptional: boolean
     name: FeatureName
     type: TypeDefinition
@@ -405,16 +439,6 @@ export const CrossReference = 'CrossReference';
 
 export function isCrossReference(item: unknown): item is CrossReference {
     return reflection.isInstance(item, CrossReference);
-}
-
-export interface EndOfFile extends AbstractElement {
-    readonly $type: 'EndOfFile';
-}
-
-export const EndOfFile = 'EndOfFile';
-
-export function isEndOfFile(item: unknown): item is EndOfFile {
-    return reflection.isInstance(item, EndOfFile);
 }
 
 export interface Group extends AbstractElement {
@@ -553,7 +577,6 @@ export type LangiumGrammarAstType = {
     Conjunction: Conjunction
     CrossReference: CrossReference
     Disjunction: Disjunction
-    EndOfFile: EndOfFile
     Grammar: Grammar
     GrammarImport: GrammarImport
     Group: Group
@@ -564,6 +587,7 @@ export type LangiumGrammarAstType = {
     NamedArgument: NamedArgument
     NegatedToken: NegatedToken
     Negation: Negation
+    NumberLiteral: NumberLiteral
     Parameter: Parameter
     ParameterReference: ParameterReference
     ParserRule: ParserRule
@@ -572,6 +596,7 @@ export type LangiumGrammarAstType = {
     ReturnType: ReturnType
     RuleCall: RuleCall
     SimpleType: SimpleType
+    StringLiteral: StringLiteral
     TerminalAlternatives: TerminalAlternatives
     TerminalGroup: TerminalGroup
     TerminalRule: TerminalRule
@@ -582,13 +607,14 @@ export type LangiumGrammarAstType = {
     UnionType: UnionType
     UnorderedGroup: UnorderedGroup
     UntilToken: UntilToken
+    ValueLiteral: ValueLiteral
     Wildcard: Wildcard
 }
 
 export class LangiumGrammarAstReflection extends AbstractAstReflection {
 
     getAllTypes(): string[] {
-        return ['AbstractElement', 'AbstractRule', 'AbstractType', 'Action', 'Alternatives', 'ArrayType', 'Assignment', 'CharacterRange', 'Condition', 'Conjunction', 'CrossReference', 'Disjunction', 'EndOfFile', 'Grammar', 'GrammarImport', 'Group', 'InferredType', 'Interface', 'Keyword', 'LiteralCondition', 'NamedArgument', 'NegatedToken', 'Negation', 'Parameter', 'ParameterReference', 'ParserRule', 'ReferenceType', 'RegexToken', 'ReturnType', 'RuleCall', 'SimpleType', 'TerminalAlternatives', 'TerminalGroup', 'TerminalRule', 'TerminalRuleCall', 'Type', 'TypeAttribute', 'TypeDefinition', 'UnionType', 'UnorderedGroup', 'UntilToken', 'Wildcard'];
+        return ['AbstractElement', 'AbstractRule', 'AbstractType', 'Action', 'Alternatives', 'ArrayType', 'Assignment', 'CharacterRange', 'Condition', 'Conjunction', 'CrossReference', 'Disjunction', 'Grammar', 'GrammarImport', 'Group', 'InferredType', 'Interface', 'Keyword', 'LiteralCondition', 'NamedArgument', 'NegatedToken', 'Negation', 'NumberLiteral', 'Parameter', 'ParameterReference', 'ParserRule', 'ReferenceType', 'RegexToken', 'ReturnType', 'RuleCall', 'SimpleType', 'StringLiteral', 'TerminalAlternatives', 'TerminalGroup', 'TerminalRule', 'TerminalRuleCall', 'Type', 'TypeAttribute', 'TypeDefinition', 'UnionType', 'UnorderedGroup', 'UntilToken', 'ValueLiteral', 'Wildcard'];
     }
 
     protected override computeIsSubtype(subtype: string, supertype: string): boolean {
@@ -600,7 +626,6 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
             case Assignment:
             case CharacterRange:
             case CrossReference:
-            case EndOfFile:
             case Group:
             case Keyword:
             case NegatedToken:
@@ -622,7 +647,6 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
             }
             case Conjunction:
             case Disjunction:
-            case LiteralCondition:
             case Negation:
             case ParameterReference: {
                 return this.isSubtype(Condition, supertype);
@@ -630,6 +654,13 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
             case Interface:
             case Type: {
                 return this.isSubtype(AbstractType, supertype);
+            }
+            case LiteralCondition: {
+                return this.isSubtype(Condition, supertype) || this.isSubtype(ValueLiteral, supertype);
+            }
+            case NumberLiteral:
+            case StringLiteral: {
+                return this.isSubtype(ValueLiteral, supertype);
             }
             case ParserRule: {
                 return this.isSubtype(AbstractRule, supertype) || this.isSubtype(AbstractType, supertype);
@@ -680,11 +711,11 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                 return {
                     name: 'Grammar',
                     mandatory: [
-                        { name: 'definesHiddenTokens', type: 'boolean' },
+                        { name: 'definesHiddenTokens', type: 'primitive', defaultValue: false },
                         { name: 'hiddenTokens', type: 'array' },
                         { name: 'imports', type: 'array' },
                         { name: 'interfaces', type: 'array' },
-                        { name: 'isDeclared', type: 'boolean' },
+                        { name: 'isDeclared', type: 'primitive', defaultValue: false },
                         { name: 'rules', type: 'array' },
                         { name: 'types', type: 'array' },
                         { name: 'usedGrammars', type: 'array' }
@@ -704,7 +735,7 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                 return {
                     name: 'LiteralCondition',
                     mandatory: [
-                        { name: 'true', type: 'boolean' }
+                        { name: 'true', type: 'primitive', defaultValue: false }
                     ]
                 };
             }
@@ -712,7 +743,7 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                 return {
                     name: 'NamedArgument',
                     mandatory: [
-                        { name: 'calledByName', type: 'boolean' }
+                        { name: 'calledByName', type: 'primitive', defaultValue: false }
                     ]
                 };
             }
@@ -720,12 +751,12 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                 return {
                     name: 'ParserRule',
                     mandatory: [
-                        { name: 'definesHiddenTokens', type: 'boolean' },
-                        { name: 'entry', type: 'boolean' },
-                        { name: 'fragment', type: 'boolean' },
+                        { name: 'definesHiddenTokens', type: 'primitive', defaultValue: false },
+                        { name: 'entry', type: 'primitive', defaultValue: false },
+                        { name: 'fragment', type: 'primitive', defaultValue: false },
                         { name: 'hiddenTokens', type: 'array' },
                         { name: 'parameters', type: 'array' },
-                        { name: 'wildcard', type: 'boolean' }
+                        { name: 'wildcard', type: 'primitive', defaultValue: false }
                     ]
                 };
             }
@@ -733,8 +764,8 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                 return {
                     name: 'TerminalRule',
                     mandatory: [
-                        { name: 'fragment', type: 'boolean' },
-                        { name: 'hidden', type: 'boolean' }
+                        { name: 'fragment', type: 'primitive', defaultValue: false },
+                        { name: 'hidden', type: 'primitive', defaultValue: false }
                     ]
                 };
             }
@@ -742,7 +773,7 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                 return {
                     name: 'TypeAttribute',
                     mandatory: [
-                        { name: 'isOptional', type: 'boolean' }
+                        { name: 'isOptional', type: 'primitive', defaultValue: false }
                     ]
                 };
             }
@@ -766,7 +797,7 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                 return {
                     name: 'CrossReference',
                     mandatory: [
-                        { name: 'deprecatedSyntax', type: 'boolean' }
+                        { name: 'deprecatedSyntax', type: 'primitive', defaultValue: false }
                     ]
                 };
             }

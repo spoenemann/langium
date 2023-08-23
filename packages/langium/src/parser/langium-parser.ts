@@ -286,8 +286,8 @@ export class LangiumParser extends AbstractLangiumParser {
             const value = obj[mandatoryProperty.name];
             if (mandatoryProperty.type === 'array' && !Array.isArray(value)) {
                 obj[mandatoryProperty.name] = [];
-            } else if (mandatoryProperty.type === 'boolean' && value === undefined) {
-                obj[mandatoryProperty.name] = false;
+            } else if (mandatoryProperty.type === 'primitive' && value === undefined) {
+                obj[mandatoryProperty.name] = mandatoryProperty.defaultValue;
             }
         }
     }

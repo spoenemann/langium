@@ -87,9 +87,8 @@ function buildTypeMetaDataMethod(astTypes: AstTypes): GeneratorNode {
     typeSwitchNode.indent(caseNode => {
         for (const interfaceType of astTypes.interfaces) {
             const props = interfaceType.properties;
-            const arrayProps = props.filter(e => hasArrayType(e.type));
-            const booleanProps = props.filter(e => hasBooleanType(e.type));
-            if (arrayProps.length > 0 || booleanProps.length > 0) {
+            const mandatoryProps = props.filter(e => e.defaultValue !== undefined || hasBooleanType(e.type) || hasArrayType(e.type));
+            if (mandatoryProps.length > 0) {
                 caseNode.append(`case '${interfaceType.name}': {`, NL);
                 caseNode.indent(caseContent => {
                     caseContent.append('return {', NL);
@@ -97,7 +96,7 @@ function buildTypeMetaDataMethod(astTypes: AstTypes): GeneratorNode {
                         returnType.append(`name: '${interfaceType.name}',`, NL);
                         returnType.append(
                             'mandatory: [', NL,
-                            buildMandatoryType(arrayProps, booleanProps),
+                            buildMandatoryType(mandatoryProps),
                             ']', NL);
                     });
                     caseContent.append('};', NL);
@@ -122,13 +121,19 @@ function buildTypeMetaDataMethod(astTypes: AstTypes): GeneratorNode {
     return typeSwitchNode;
 }
 
-function buildMandatoryType(arrayProps: Property[], booleanProps: Property[]): GeneratorNode {
+function buildMandatoryType(props: Property[]): GeneratorNode {
     const indent = new IndentNode();
-    const all = arrayProps.concat(booleanProps).sort((a, b) => a.name.localeCompare(b.name));
-    for (let i = 0; i < all.length; i++) {
-        const property = all[i];
-        const type = arrayProps.includes(property) ? 'array' : 'boolean';
-        indent.append("{ name: '", property.name, "', type: '", type, "' }", i < all.length - 1 ? ',' : '', NL);
+    for (let i = 0; i < props.length; i++) {
+        const property = props[i];
+        const type = property.defaultValue !== undefined ? 'primitive' : 'array';
+        indent.append("{ name: '", property.name, "', type: '", type, "'");
+        if (property.defaultValue !== undefined) {
+            const defaultValue =typeof property.defaultValue === 'string'
+                ? `"${property.defaultValue}"`
+                : property.defaultValue.toString();
+            indent.append(', defaultValue: ', defaultValue);
+        }
+        indent.append(' }', i < props.length - 1 ? ',' : '', NL);
     }
     return indent;
 }

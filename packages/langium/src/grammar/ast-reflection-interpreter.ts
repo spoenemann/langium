@@ -12,7 +12,7 @@ import { AbstractAstReflection } from '../syntax-tree.js';
 import { MultiMap } from '../utils/collections.js';
 import { isGrammar } from './generated/ast.js';
 import { collectAst } from './type-system/ast-collector.js';
-import { collectTypeHierarchy, findReferenceTypes, hasArrayType, isAstType, hasBooleanType, mergeTypesAndInterfaces } from './type-system/types-util.js';
+import { collectTypeHierarchy, findReferenceTypes, hasArrayType, isAstType, mergeTypesAndInterfaces } from './type-system/types-util.js';
 
 export function interpretAstReflection(astTypes: AstTypes): AstReflection;
 export function interpretAstReflection(grammar: Grammar, documents?: LangiumDocuments): AstReflection;
@@ -112,27 +112,28 @@ function buildTypeMetaData(astTypes: AstTypes): Map<string, TypeMetaData> {
     const map = new Map<string, TypeMetaData>();
     for (const interfaceType of astTypes.interfaces) {
         const props = interfaceType.superProperties;
-        const arrayProps = props.filter(e => hasArrayType(e.type));
-        const booleanProps = props.filter(e => !hasArrayType(e.type) && hasBooleanType(e.type));
-        if (arrayProps.length > 0 || booleanProps.length > 0) {
+        const mandatoryProps = props.filter(e => e.defaultValue !== undefined || hasArrayType(e.type));
+        if (mandatoryProps.length > 0) {
             map.set(interfaceType.name, {
                 name: interfaceType.name,
-                mandatory: buildMandatoryMetaData(arrayProps, booleanProps)
+                mandatory: buildMandatoryMetaData(mandatoryProps)
             });
         }
     }
     return map;
 }
 
-function buildMandatoryMetaData(arrayProps: Property[], booleanProps: Property[]): TypeMandatoryProperty[] {
+function buildMandatoryMetaData(props: Property[]): TypeMandatoryProperty[] {
     const array: TypeMandatoryProperty[] = [];
-    const all = arrayProps.concat(booleanProps).sort((a, b) => a.name.localeCompare(b.name));
+    const all = props.sort((a, b) => a.name.localeCompare(b.name));
     for (const property of all) {
-        const type = arrayProps.includes(property) ? 'array' : 'boolean';
-        array.push({
+        const type = property.defaultValue !== undefined ? 'primitive' : 'array';
+        const mandatoryProperty: TypeMandatoryProperty = {
             name: property.name,
+            defaultValue: property.defaultValue,
             type
-        });
+        };
+        array.push(mandatoryProperty);
     }
     return array;
 }

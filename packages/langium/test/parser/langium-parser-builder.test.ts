@@ -647,6 +647,49 @@ describe('Unicode terminal rules', () => {
 
 });
 
+describe('Parsing default values', () => {
+
+    const grammar = `
+        grammar test
+        entry Model returns Model: a=ID b=ID?;
+
+        interface Model {
+            a: string
+            b: string = "hello"
+        }
+
+        terminal ID: /\\w+/;
+        hidden terminal WS: /\\s+/;
+    `;
+
+    let parser: LangiumParser;
+
+    beforeEach(async () => {
+        parser = await parserFromGrammar(grammar);
+    });
+
+    test('Assigns "hello" for "b"', async () => {
+        const result = parser.parse('hi');
+        const model = result.value as unknown as {
+            a: string
+            b: string
+        };
+        expect(model.a).toBe('hi');
+        expect(model.b).toBe('hello');
+    });
+
+    test('Does not overwrite parsed value for "b"', async () => {
+        const result = parser.parse('hi world');
+        const model = result.value as unknown as {
+            a: string
+            b: string
+        };
+        expect(model.a).toBe('hi');
+        expect(model.b).toBe('world');
+    });
+
+});
+
 describe('ALL(*) parser', () => {
 
     const grammar = `

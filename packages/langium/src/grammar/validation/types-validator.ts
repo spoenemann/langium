@@ -25,6 +25,7 @@ export function registerTypeValidationChecks(services: LangiumGrammarServices): 
         Grammar: [
             typesValidator.checkDeclaredTypesConsistency,
             typesValidator.checkDeclaredAndInferredTypesConsistency,
+            typesValidator.checkAttributeDefaultValue
         ],
         Interface: [
             typesValidator.checkCyclicInterface
@@ -37,6 +38,24 @@ export function registerTypeValidationChecks(services: LangiumGrammarServices): 
 }
 
 export class LangiumGrammarTypesValidator {
+
+    checkAttributeDefaultValue(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        const validationResources = (grammar.$document as LangiumGrammarDocument)?.validationResources;
+        if (validationResources) {
+            for (const grammarInterface of grammar.interfaces) {
+                const matchedProperties = matchInterfaceAttributes(validationResources, grammarInterface);
+                for (const [grammarProperty, property] of matchedProperties) {
+                    const defaultType = getDefaultValueType(grammarProperty.defaultValue);
+                    if (defaultType && !isTypeAssignable(defaultType, property.type)) {
+                        accept('error', `Cannot assign default value of type '${propertyTypeToString(defaultType, 'DeclaredType')}' to type '${propertyTypeToString(property.type, 'DeclaredType')}'.`, {
+                            node: grammarProperty,
+                            property: 'defaultValue'
+                        });
+                    }
+                }
+            }
+        }
+    }
 
     checkCyclicType(type: ast.Type, accept: ValidationAcceptor): void {
         if (isCyclicType(type, new Set())) {
@@ -84,7 +103,31 @@ export class LangiumGrammarTypesValidator {
     }
 }
 
-///////////////////////////////////////////////////////////////////////////////
+function matchInterfaceAttributes(resources: ValidationResources, grammarInterface: ast.Interface): Array<[ast.TypeAttribute, Property]> {
+    const elements: Array<[ast.TypeAttribute, Property]> = [];
+    const interfaceType = resources.typeToValidationInfo.get(grammarInterface.name);
+    if (interfaceType && isDeclared(interfaceType) && isInterfaceType(interfaceType.declared)) {
+        for (const grammarProperty of grammarInterface.attributes.filter(prop => prop.defaultValue)) {
+            const property = interfaceType.declared.properties.find(e => e.name === grammarProperty.name);
+            if (property) {
+                elements.push([grammarProperty, property]);
+            }
+        }
+    }
+    return elements;
+}
+
+function getDefaultValueType(defaultValue?: ast.ValueLiteral): PropertyType | undefined {
+    if (ast.isLiteralCondition(defaultValue)) {
+        return { primitive: 'boolean' };
+    } else if (ast.isNumberLiteral(defaultValue)) {
+        return { primitive: 'number' };
+    } else if (ast.isStringLiteral(defaultValue)) {
+        return { string: defaultValue.value };
+    } else {
+        return undefined;
+    }
+}
 
 function isCyclicType(type: ast.TypeDefinition | ast.AbstractType, visited: Set<AstNode>): boolean {
     if (visited.has(type)) {

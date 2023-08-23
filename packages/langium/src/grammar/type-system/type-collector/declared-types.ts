@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Interface, Type, TypeDefinition } from '../../generated/ast.js';
+import type { Interface, Type, TypeDefinition} from '../../generated/ast.js';
+import { isLiteralCondition } from '../../generated/ast.js';
 import type { PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyType, PlainUnion } from './plain-types.js';
 import { isArrayType, isReferenceType, isUnionType, isSimpleType } from '../../generated/ast.js';
 import { getTypeName, getTypeNameWithoutError, isPrimitiveType } from '../../internal-grammar-util.js';
@@ -16,12 +17,20 @@ export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): P
     for (const type of interfaces) {
         const properties: PlainProperty[] = [];
         for (const attribute of type.attributes) {
-            properties.push({
+            const property: PlainProperty = {
                 name: attribute.name,
                 optional: attribute.isOptional,
                 astNodes: new Set([attribute]),
                 type: typeDefinitionToPropertyType(attribute.type)
-            });
+            };
+            if (attribute.defaultValue) {
+                if (isLiteralCondition(attribute.defaultValue)) {
+                    property.defaultValue = attribute.defaultValue.true;
+                } else {
+                    property.defaultValue = attribute.defaultValue.value;
+                }
+            }
+            properties.push(property);
         }
         const superTypes = new Set<string>();
         for (const superType of type.superTypes) {
