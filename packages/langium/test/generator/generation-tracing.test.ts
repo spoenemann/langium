@@ -5,9 +5,10 @@
  ******************************************************************************/
 
 import { beforeAll, describe, expect, test } from 'vitest';
-import { createServicesForGrammar, expandToNode, expandTracedToNode, expandToString, findNodeForKeyword, findNodesForProperty, joinTracedToNode, joinTracedToNodeIf, toStringAndTrace, traceToNode, TreeStreamImpl } from 'langium';
+import { expandToNode, expandTracedToNode, expandToString, findNodeForKeyword, findNodesForProperty, joinTracedToNode, joinTracedToNodeIf, toStringAndTrace, traceToNode, TreeStreamImpl } from 'langium';
 import type { SourceRegion, TraceRegion, AstNodeWithTextRegion, AstNode } from 'langium';
 import { parseHelper } from 'langium/test';
+import { createServicesForGrammar } from 'langium/grammar';
 
 // don't bather because of unexpected indentations, e.g. within template substitutions
 /* eslint-disable @typescript-eslint/indent */

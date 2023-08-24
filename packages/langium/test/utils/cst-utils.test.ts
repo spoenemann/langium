@@ -6,7 +6,8 @@
 
 import type { Grammar } from 'langium';
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, findLeafNodeAtOffset, EmptyFileSystem } from 'langium';
+import { findLeafNodeAtOffset, EmptyFileSystem } from 'langium';
+import { createLangiumGrammarServices } from 'langium/grammar';
 import { parseHelper } from 'langium/test';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);

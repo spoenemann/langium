@@ -5,10 +5,10 @@
  ******************************************************************************/
 
 import type { Grammar } from 'langium';
-import type { AstTypes } from 'langium/types';
+import type { AstTypes } from 'langium/grammar';
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem, expandToString, EOL } from 'langium';
-import { collectAst, mergeTypesAndInterfaces } from 'langium/types';
+import { EmptyFileSystem, expandToString, EOL } from 'langium';
+import { createLangiumGrammarServices, collectAst, mergeTypesAndInterfaces } from 'langium/grammar';
 import { clearDocuments, parseHelper } from 'langium/test';
 
 describe('Inferred types', () => {

@@ -4,13 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 import type { GeneratorNode, Grammar } from 'langium';
-import { CompositeGeneratorNode, getAllReachableRules, GrammarAST, NL, stream, streamAllContents } from 'langium';
+import { CompositeGeneratorNode, getAllReachableRules, GrammarAST, NL, stream, streamAllContents, terminalRegex } from 'langium';
 import fs from 'fs-extra';
 import * as path from 'node:path';
 import * as url from 'node:url';
 import * as readline from 'node:readline';
 import chalk from 'chalk';
-import { terminalRegex } from 'langium/internal';
 
 // This is a replacement for `__dirname`
 function getDirname(): string {

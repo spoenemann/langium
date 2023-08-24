@@ -5,8 +5,7 @@
  ******************************************************************************/
 import type { Grammar, LangiumServices } from 'langium';
 import { CompositeGeneratorNode, NL, toString } from 'langium';
-import { collectAst } from 'langium/types';
-import { LangiumGrammarGrammar } from 'langium/internal';
+import { collectAst, LangiumGrammarGrammar } from 'langium/grammar';
 import { collectKeywords } from './util.js';
 
 export function generateTypesFile(services: LangiumServices, grammars: Grammar[]): string {

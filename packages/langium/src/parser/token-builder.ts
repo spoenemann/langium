@@ -9,9 +9,8 @@ import type { AbstractRule, Grammar, Keyword, TerminalRule } from '../grammar/ge
 import type { Stream } from '../utils/stream.js';
 import { Lexer, EOF } from 'chevrotain';
 import { isKeyword, isParserRule, isTerminalRule, isEndOfFile } from '../grammar/generated/ast.js';
-import { terminalRegex } from '../grammar/internal-grammar-util.js';
+import { getAllReachableRules, terminalRegex } from '../utils/grammar-util.js';
 import { streamAllContents, streamAst } from '../utils/ast-util.js';
-import { getAllReachableRules } from '../utils/grammar-util.js';
 import { getCaseInsensitivePattern, isWhitespaceRegExp, partialMatches } from '../utils/regex-util.js';
 import { stream } from '../utils/stream.js';
 

@@ -11,7 +11,7 @@ export * from './services.js';
 export * from './syntax-tree.js';
 export * from './documentation/index.js';
 export * from './generator/index.js';
-export * from './grammar/index.js';
+export * from './language/index.js';
 export * from './lsp/index.js';
 export * from './parser/index.js';
 export * from './references/index.js';

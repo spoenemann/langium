@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 import type { GeneratorNode, Grammar, LangiumServices } from 'langium';
-import type { AstTypes, Property } from 'langium/types';
+import type { AstTypes, Property } from 'langium/grammar';
 import type { LangiumConfig } from '../package.js';
 import { IndentNode, CompositeGeneratorNode, NL, toString, streamAllContents, MultiMap, GrammarAST } from 'langium';
-import { collectAst, collectTypeHierarchy, findReferenceTypes, hasArrayType, isAstType, hasBooleanType, mergeTypesAndInterfaces } from 'langium/types';
+import { collectAst, collectTypeHierarchy, findReferenceTypes, hasArrayType, isAstType, hasBooleanType, mergeTypesAndInterfaces } from 'langium/grammar';
 import { collectTerminalRegexps, generatedHeader } from './util.js';
 
 export function generateAst(services: LangiumServices, grammars: Grammar[], config: LangiumConfig): string {

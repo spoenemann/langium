@@ -16,7 +16,7 @@ export function generateModule(grammars: Grammar[], config: LangiumConfig, gramm
 
     node.append(generatedHeader);
     if (config.langiumInternal) {
-        node.append(`import type { LanguageMetaData } from '../language-meta-data${config.importExtension}';`, NL);
+        node.append(`import type { LanguageMetaData } from '../../language/language-meta-data${config.importExtension}';`, NL);
         node.append(`import type { Module } from '../../dependency-injection${config.importExtension}';`, NL);
         node.append(`import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices } from '../../services${config.importExtension}';`, NL);
         if (hasIParserConfigImport) {

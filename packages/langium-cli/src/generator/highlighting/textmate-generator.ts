@@ -5,8 +5,7 @@
 ******************************************************************************/
 import type { Grammar } from 'langium';
 import type { LangiumLanguageConfig } from '../../package.js';
-import { EOL, escapeRegExp, getCaseInsensitivePattern, getTerminalParts, GrammarAST, isCommentTerminal, stream } from 'langium';
-import { terminalRegex } from 'langium/internal';
+import { EOL, escapeRegExp, getCaseInsensitivePattern, getTerminalParts, GrammarAST, isCommentTerminal, stream, terminalRegex } from 'langium';
 import { collectKeywords } from '../util.js';
 
 /* eslint-disable dot-notation */

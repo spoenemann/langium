@@ -5,8 +5,7 @@
  ******************************************************************************/
 import type { Grammar } from 'langium';
 import type { LangiumLanguageConfig } from '../../package.js';
-import { CompositeGeneratorNode, escapeRegExp, GrammarAST, isCommentTerminal, NL, toString } from 'langium';
-import { terminalRegex } from 'langium/internal';
+import { CompositeGeneratorNode, escapeRegExp, GrammarAST, isCommentTerminal, NL, toString, terminalRegex } from 'langium';
 import _ from 'lodash';
 import { collectKeywords } from '../util.js';
 

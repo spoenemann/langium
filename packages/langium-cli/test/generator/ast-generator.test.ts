@@ -7,8 +7,9 @@
 import type { Grammar } from 'langium';
 import type { LangiumConfig } from '../../src/package.js';
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem, expandToString, normalizeEOL } from 'langium';
+import { EmptyFileSystem, expandToString, normalizeEOL } from 'langium';
 import { parseHelper } from 'langium/test';
+import { createLangiumGrammarServices } from 'langium/grammar';
 import { RelativePath } from '../../src/package.js';
 import { generateAst } from '../../src/generator/ast-generator.js';
 

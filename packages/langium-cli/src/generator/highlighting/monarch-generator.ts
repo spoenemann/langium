@@ -6,8 +6,7 @@
 
 import type { Grammar } from 'langium';
 import type { LangiumLanguageConfig } from '../../package.js';
-import { getTerminalParts, isCommentTerminal, CompositeGeneratorNode, NL, toString, escapeRegExp, GrammarAST, isWhitespaceRegExp } from 'langium';
-import { terminalRegex } from 'langium/internal';
+import { getTerminalParts, isCommentTerminal, CompositeGeneratorNode, NL, toString, escapeRegExp, GrammarAST, isWhitespaceRegExp, terminalRegex } from 'langium';
 import { collectKeywords } from '../util.js';
 
 /**
