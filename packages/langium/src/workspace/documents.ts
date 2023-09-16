@@ -9,7 +9,7 @@ import type { Diagnostic, TextDocuments } from 'vscode-languageserver';
 import type { ParseResult } from '../parser/langium-parser';
 import type { ServiceRegistry } from '../service-registry';
 import type { LangiumSharedServices } from '../services';
-import type { AstNode, AstNodeDescription, Reference } from '../syntax-tree';
+import type { AstNode, AstNodeDescription, MultiReference, Reference } from '../syntax-tree';
 import type { Mutable } from '../utils/ast-util';
 import type { MultiMap } from '../utils/collections';
 import type { Stream } from '../utils/stream';
@@ -34,7 +34,7 @@ export interface LangiumDocument<T extends AstNode = AstNode> {
     /** Result of the scope precomputation phase */
     precomputedScopes?: PrecomputedScopes;
     /** An array of all cross-references found in the AST while linking */
-    references: Reference[];
+    references: Array<Reference | MultiReference>;
     /** Result of the validation phase */
     diagnostics?: Diagnostic[]
 }

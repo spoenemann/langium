@@ -1,12 +1,12 @@
 // Monarch syntax highlighting for the arithmetics language.
 export default {
     keywords: [
-        'def','module'
+        'def','interface','module'
     ],
     operators: [
         '%','*','+',',','-','/',':',';','^'
     ],
-    symbols: /%|\(|\)|\*|\+|,|-|\/|:|;|\^/,
+    symbols: /%|\(|\)|\*|\+|,|-|\/|:|;|\^|\{|\}/,
 
     tokenizer: {
         initial: [

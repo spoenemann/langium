@@ -4,7 +4,7 @@
  ******************************************************************************/
 
 /* eslint-disable */
-import type { AstNode, Reference, ReferenceInfo, TypeMetaData } from 'langium';
+import type { AstNode, Reference, MultiReference, ReferenceInfo, TypeMetaData } from 'langium';
 import { AbstractAstReflection } from 'langium';
 
 export const ArithmeticsTerminals = {
@@ -91,6 +91,19 @@ export function isEvaluation(item: unknown): item is Evaluation {
     return reflection.isInstance(item, Evaluation);
 }
 
+export interface Field extends AstNode {
+    readonly $container: Interface;
+    readonly $type: 'Field';
+    name: string
+    type: MultiReference<Interface>
+}
+
+export const Field = 'Field';
+
+export function isField(item: unknown): item is Field {
+    return reflection.isInstance(item, Field);
+}
+
 export interface FunctionCall extends AstNode {
     readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
     readonly $type: 'FunctionCall';
@@ -104,8 +117,22 @@ export function isFunctionCall(item: unknown): item is FunctionCall {
     return reflection.isInstance(item, FunctionCall);
 }
 
+export interface Interface extends AstNode {
+    readonly $container: Module;
+    readonly $type: 'Interface';
+    fields: Array<Field>
+    name: string
+}
+
+export const Interface = 'Interface';
+
+export function isInterface(item: unknown): item is Interface {
+    return reflection.isInstance(item, Interface);
+}
+
 export interface Module extends AstNode {
     readonly $type: 'Module';
+    interfaces: Array<Interface>
     name: string
     statements: Array<Statement>
 }
@@ -135,7 +162,9 @@ export type ArithmeticsAstType = {
     Definition: Definition
     Evaluation: Evaluation
     Expression: Expression
+    Field: Field
     FunctionCall: FunctionCall
+    Interface: Interface
     Module: Module
     NumberLiteral: NumberLiteral
     Statement: Statement
@@ -144,7 +173,7 @@ export type ArithmeticsAstType = {
 export class ArithmeticsAstReflection extends AbstractAstReflection {
 
     getAllTypes(): string[] {
-        return ['AbstractDefinition', 'BinaryExpression', 'DeclaredParameter', 'Definition', 'Evaluation', 'Expression', 'FunctionCall', 'Module', 'NumberLiteral', 'Statement'];
+        return ['AbstractDefinition', 'BinaryExpression', 'DeclaredParameter', 'Definition', 'Evaluation', 'Expression', 'Field', 'FunctionCall', 'Interface', 'Module', 'NumberLiteral', 'Statement'];
     }
 
     protected override computeIsSubtype(subtype: string, supertype: string): boolean {
@@ -172,6 +201,9 @@ export class ArithmeticsAstReflection extends AbstractAstReflection {
     getReferenceType(refInfo: ReferenceInfo): string {
         const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
         switch (referenceId) {
+            case 'Field:type': {
+                return Interface;
+            }
             case 'FunctionCall:func': {
                 return AbstractDefinition;
             }
@@ -199,10 +231,19 @@ export class ArithmeticsAstReflection extends AbstractAstReflection {
                     ]
                 };
             }
+            case 'Interface': {
+                return {
+                    name: 'Interface',
+                    mandatory: [
+                        { name: 'fields', type: 'array' }
+                    ]
+                };
+            }
             case 'Module': {
                 return {
                     name: 'Module',
                     mandatory: [
+                        { name: 'interfaces', type: 'array' },
                         { name: 'statements', type: 'array' }
                     ]
                 };

@@ -34,7 +34,7 @@ ArrayType infers TypeDefinition:
 
 ReferenceType infers TypeDefinition:
     SimpleType |
-    {infer ReferenceType} '@' referenceType=SimpleType;
+    {infer ReferenceType} '@' referenceType=SimpleType (isMulti?='*')?;
 
 SimpleType infers TypeDefinition:
     '(' TypeDefinition ')' |
@@ -151,7 +151,7 @@ AssignableAlternatives infers AbstractElement:
     AssignableTerminal ({infer Alternatives.elements+=current} ('|' elements+=AssignableTerminal)+)?;
 
 CrossReference infers AbstractElement:
-    {infer CrossReference} '[' type=[AbstractType] ((deprecatedSyntax?='|' | ':') terminal=CrossReferenceableTerminal )? ']';
+    {infer CrossReference} '[' type=[AbstractType] ((deprecatedSyntax?='|' | ':') terminal=CrossReferenceableTerminal )? ']' (isMulti?='[' ']')?;
 
 CrossReferenceableTerminal infers AbstractElement:
     Keyword | RuleCall;

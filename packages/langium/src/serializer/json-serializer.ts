@@ -213,7 +213,8 @@ export class DefaultJsonSerializer implements JsonSerializer {
             };
         } else if (reference.$error) {
             const ref: Mutable<Reference> = {
-                $refText: refText ?? ''
+                $refText: refText ?? '',
+                ref: undefined
             };
             ref.error = {
                 container,

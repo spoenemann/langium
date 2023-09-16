@@ -51,7 +51,7 @@ export interface Reference<T extends AstNode = AstNode> {
      * resolution by the `Linker` in case it has not been done yet. If the reference cannot be resolved,
      * the value is `undefined`.
      */
-    readonly ref?: T;
+    readonly ref: T | undefined;
 
     /** If any problem occurred while resolving the reference, it is described by this property. */
     readonly error?: LinkingError;
@@ -63,8 +63,26 @@ export interface Reference<T extends AstNode = AstNode> {
     readonly $nodeDescription?: AstNodeDescription;
 }
 
+export interface MultiReference<T extends AstNode = AstNode> {
+    /** The CST node from which the reference was parsed */
+    readonly $refNode?: CstNode;
+    /** The actual text used to look up in the surrounding scope */
+    readonly $refText: string;
+    readonly items: Array<MultiReferenceItem<T>>;
+}
+
+export interface MultiReferenceItem<T> {
+    readonly $nodeDescription?: AstNodeDescription;
+    readonly ref: T | undefined;
+    readonly error?: LinkingError;
+}
+
 export function isReference(obj: unknown): obj is Reference {
-    return typeof obj === 'object' && obj !== null && typeof (obj as Reference).$refText === 'string';
+    return typeof obj === 'object' && obj !== null && typeof (obj as Reference).$refText === 'string' && 'ref' in obj;
+}
+
+export function isMultiReference(obj: unknown): obj is MultiReference {
+    return typeof obj === 'object' && obj !== null && typeof (obj as Reference).$refText === 'string' && 'refs' in obj;
 }
 
 /**

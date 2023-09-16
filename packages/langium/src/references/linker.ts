@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { LangiumServices } from '../services';
-import type { AstNode, AstNodeDescription, AstReflection, CstNode, LinkingError, Reference, ReferenceInfo } from '../syntax-tree';
+import type { AstNode, AstNodeDescription, AstReflection, CstNode, LinkingError, MultiReference, Reference, ReferenceInfo } from '../syntax-tree';
 import type { AstNodeLocator } from '../workspace/ast-node-locator';
 import type { LangiumDocument, LangiumDocuments } from '../workspace/documents';
 import type { ScopeProvider } from './scope-provider';
@@ -65,11 +65,19 @@ export interface Linker {
      */
     buildReference(node: AstNode, property: string, refNode: CstNode | undefined, refText: string): Reference;
 
+    buildMultiReference(node: AstNode, property: string, refNode: CstNode | undefined, refText: string): MultiReference;
+
 }
 
-interface DefaultReference extends Reference {
+export interface DefaultReference extends Reference {
     _ref?: AstNode | LinkingError;
     _nodeDescription?: AstNodeDescription;
+}
+
+export interface DefaultMultiReference extends MultiReference {
+    _refs?: Array<AstNode | undefined>;
+    _nodeDescriptions?: AstNodeDescription[];
+    _linkingErrors?: LinkingError[]
 }
 
 export class DefaultLinker implements Linker {
@@ -121,8 +129,13 @@ export class DefaultLinker implements Linker {
 
     unlink(document: LangiumDocument): void {
         for (const ref of document.references) {
-            delete (ref as DefaultReference)._ref;
-            delete (ref as DefaultReference)._nodeDescription;
+            if ('_ref' in ref) {
+                delete (ref as DefaultReference)._ref;
+                delete (ref as DefaultReference)._nodeDescription;
+            } else if ('_refs' in ref) {
+                (ref as DefaultMultiReference)._refs = [];
+                (ref as DefaultMultiReference)._nodeDescriptions = [];
+            }
         }
         document.references = [];
     }
@@ -170,6 +183,10 @@ export class DefaultLinker implements Linker {
             }
         };
         return reference;
+    }
+
+    buildMultiReference(node: AstNode, property: string, refNode: CstNode | undefined, refText: string): MultiReference {
+        throw new Error();
     }
 
     protected getLinkedNode(refInfo: ReferenceInfo): { node?: AstNode, descr?: AstNodeDescription, error?: LinkingError } {

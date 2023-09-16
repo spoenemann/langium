@@ -303,11 +303,13 @@ export class LangiumParser extends AbstractLangiumParser {
         return this.assignmentMap.get(feature)!;
     }
 
-    private assign(operator: string, feature: string, value: unknown, cstNode: CstNode, isCrossRef: boolean): void {
+    private assign(operator: string, feature: string, value: unknown, cstNode: CstNode, crossRef: boolean | 'multi' | 'single'): void {
         const obj = this.current;
         let item: unknown;
-        if (isCrossRef && typeof value === 'string') {
+        if (crossRef === 'single' && typeof value === 'string') {
             item = this.linker.buildReference(obj, feature, cstNode, value);
+        } else if (crossRef === 'multi' && typeof value === 'string') {
+            item = this.linker.buildMultiReference(obj, feature, cstNode, value);
         } else {
             item = value;
         }

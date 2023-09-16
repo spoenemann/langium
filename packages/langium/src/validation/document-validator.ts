@@ -9,7 +9,8 @@ import type { Diagnostic } from 'vscode-languageserver';
 import type { LanguageMetaData } from '../grammar/language-meta-data';
 import type { ParseResult } from '../parser/langium-parser';
 import type { LangiumServices } from '../services';
-import type { AstNode, CstNode } from '../syntax-tree';
+import type { AstNode, CstNode, LinkingError} from '../syntax-tree';
+import { isMultiReference, isReference } from '../syntax-tree';
 import type { LangiumDocument } from '../workspace/documents';
 import type { DiagnosticData, DiagnosticInfo, ValidationAcceptor, ValidationCategory, ValidationRegistry } from './validation-registry';
 import { CancellationToken, DiagnosticSeverity, Position, Range } from 'vscode-languageserver';
@@ -156,7 +157,13 @@ export class DefaultDocumentValidator implements DocumentValidator {
 
     protected processLinkingErrors(document: LangiumDocument, diagnostics: Diagnostic[], _options: ValidationOptions): void {
         for (const reference of document.references) {
-            const linkingError = reference.error;
+            let linkingError: LinkingError | undefined;
+            if (isReference(reference)) {
+                linkingError = reference.error;
+            } else if (isMultiReference(reference)) {
+                const firstError = reference.items.find(e => Boolean(e.error));
+                linkingError = firstError?.error;
+            }
             if (linkingError) {
                 const info: DiagnosticInfo<AstNode, string> = {
                     node: linkingError.container,

@@ -2,10 +2,16 @@ grammar Arithmetics
 
 entry Module:
     'module' name=ID
-    (statements+=Statement)*;
+    (statements+=Statement | interfaces+=Interface)*;
 
 Statement:
     Definition | Evaluation;
+
+Interface: 'interface' name=ID '{'
+    fields+=Field*
+'}';
+
+Field: name=ID ':' type=[Interface][];
 
 Definition:
     'def' name=ID ('(' args+=DeclaredParameter (',' args+=DeclaredParameter)* ')')?

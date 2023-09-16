@@ -17,10 +17,10 @@ export function generateAst(services: LangiumServices, grammars: Grammar[], conf
         generatedHeader,
         '/* eslint-disable */', NL,
     );
-    const crossRef = grammars.some(grammar => hasCrossReferences(grammar));
+    const crossRef = getCrossReferenceTypes(grammars);
     const importFrom = config.langiumInternal ? '../../syntax-tree' : 'langium';
     fileNode.append(
-        `import type { AstNode${crossRef ? ', Reference' : ''}, ReferenceInfo, TypeMetaData } from '${importFrom}';`, NL,
+        `import type { AstNode${crossRef.single ? ', Reference' : ''}${crossRef.multi ? ', MultiReference' : ''}, ReferenceInfo, TypeMetaData } from '${importFrom}';`, NL,
         `import { AbstractAstReflection } from '${importFrom}';`, NL, NL
     );
 
@@ -34,8 +34,13 @@ export function generateAst(services: LangiumServices, grammars: Grammar[], conf
     return toString(fileNode);
 }
 
-function hasCrossReferences(grammar: Grammar): boolean {
-    return Boolean(streamAllContents(grammar).find(GrammarAST.isCrossReference));
+function getCrossReferenceTypes(grammars: Grammar[]): { single: boolean, multi: boolean } {
+    const allCrossReferences = grammars.flatMap(grammar => streamAllContents(grammar).filter(GrammarAST.isCrossReference).toArray());
+    const multiCrossReferences = allCrossReferences.filter(e => e.isMulti);
+    return {
+        single: multiCrossReferences.length < allCrossReferences.length,
+        multi: multiCrossReferences.length > 0
+    };
 }
 
 function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): GeneratorNode {

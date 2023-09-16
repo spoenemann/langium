@@ -7,7 +7,7 @@
 import type { URI } from 'vscode-uri';
 import type { ServiceRegistry } from '../service-registry';
 import type { LangiumSharedServices } from '../services';
-import type { AstNode } from '../syntax-tree';
+import type { AstNode} from '../syntax-tree';
 import type { MaybePromise } from '../utils/promise-util';
 import type { ValidationOptions } from '../validation/document-validator';
 import type { IndexManager } from '../workspace/index-manager';
@@ -196,7 +196,13 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
      */
     protected shouldRelink(document: LangiumDocument, changedUris: Set<string>): boolean {
         // Relink documents with linking errors -- maybe those references can be resolved now
-        if (document.references.some(ref => ref.error !== undefined)) {
+        if (document.references.some(ref => {
+            if ('ref' in ref) {
+                return ref.error !== undefined;
+            } else {
+                return ref.items.some(e => e.error !== undefined);
+            }
+        })) {
             return true;
         }
         // Check whether the document is affected by any of the changed URIs
