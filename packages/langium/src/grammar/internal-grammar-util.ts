@@ -18,12 +18,9 @@ import type { Module} from '../dependency-injection.js';
 import { inject } from '../dependency-injection.js';
 import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../services.js';
 import { EmptyFileSystem } from '../workspace/file-system-provider.js';
-import { interpretAstReflection } from '../language/ast-reflection-interpreter.js';
+import { interpretAstReflection } from './ast-reflection-interpreter.js';
 import { createDefaultModule, createDefaultSharedModule } from '../default-module.js';
-import { getExplicitRuleType, getTypeName, isDataType, isDataTypeRule } from '../utils/grammar-util.js';
-
-export * from './generated/grammar.js';
-export * from './validation/validator.js';
+import { getTypeName, isDataType } from '../utils/grammar-util.js';
 
 export function hasDataTypeReturn(rule: ast.ParserRule): boolean {
     const returnType = rule.returnType?.ref;
@@ -99,14 +96,6 @@ export function getTypeNameWithoutError(type?: ast.AbstractType | ast.InferredTy
         return getTypeName(type);
     } catch {
         return undefined;
-    }
-}
-
-export function getRuleType(rule: ast.AbstractRule): string {
-    if (ast.isTerminalRule(rule)) {
-        return rule.type?.name ?? 'string';
-    } else {
-        return isDataTypeRule(rule) ? rule.name : getExplicitRuleType(rule) ?? rule.name;
     }
 }
 

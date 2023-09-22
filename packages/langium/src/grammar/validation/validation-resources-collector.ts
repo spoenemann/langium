@@ -13,10 +13,9 @@ import type { InterfaceType, Property } from '../type-system/type-collector/type
 import { MultiMap } from '../../utils/collections.js';
 import { stream } from '../../utils/stream.js';
 import { isAction, isAlternatives, isGroup, isUnorderedGroup } from '../generated/ast.js';
-import { getRuleType } from '../internal-grammar-util.js';
 import { mergeInterfaces, mergeTypesAndInterfaces } from '../type-system/types-util.js';
 import { collectValidationAst } from '../type-system/ast-collector.js';
-import { getActionType } from '../../utils/grammar-util.js';
+import { getActionType, getRuleType } from '../../utils/grammar-util.js';
 
 export class LangiumGrammarValidationResourcesCollector {
     private readonly documents: LangiumDocuments;

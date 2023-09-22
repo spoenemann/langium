@@ -4,6 +4,5 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-export * from './ast-reflection-interpreter.js';
 export * from './grammar-config.js';
 export * from './language-meta-data.js';

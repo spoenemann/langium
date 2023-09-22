@@ -396,6 +396,14 @@ export function getActionType(action: ast.Action): string | undefined {
     return undefined; // not inferring and not referencing a valid type
 }
 
+export function getRuleType(rule: ast.AbstractRule): string {
+    if (ast.isTerminalRule(rule)) {
+        return rule.type?.name ?? 'string';
+    } else {
+        return isDataTypeRule(rule) ? rule.name : getExplicitRuleType(rule) ?? rule.name;
+    }
+}
+
 export function terminalRegex(terminalRule: ast.TerminalRule): RegExp {
     const flags: Flags = {
         s: false,

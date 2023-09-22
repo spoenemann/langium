@@ -5,10 +5,10 @@
  ******************************************************************************/
 
 import { describe, test, beforeEach } from 'vitest';
-import { EmptyFileSystem } from 'langium';
+import type { AstNode, AstNodeDescription, LangiumDocument } from 'langium';
+import { DefaultAstNodeDescriptionProvider, DefaultCompletionProvider, EmptyFileSystem } from 'langium';
 import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
 import { clearDocuments, expectCompletion, parseHelper } from 'langium/test';
-import { beforeEach, describe, test } from 'vitest';
 
 describe('Langium completion provider', () => {
 

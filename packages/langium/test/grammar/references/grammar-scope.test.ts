@@ -7,7 +7,7 @@
 import type { Grammar } from 'langium';
 import type { GrammarAST as GrammarTypes } from 'langium';
 import { beforeEach, describe, expect, test } from 'vitest';
-import { EmptyFileSystem, UriUtils } from 'langium';
+import { EmptyFileSystem } from 'langium';
 import { createLangiumGrammarServices } from 'langium/grammar';
 import { clearDocuments, parseHelper } from 'langium/test';
 
