@@ -269,6 +269,30 @@ function findNameAssignmentInternal(type: ast.AbstractType, cache: Map<ast.Abstr
     return undefined;
 }
 
+export function getActionAtElement(element: ast.AbstractElement): ast.Action | undefined {
+    const parent = element.$container;
+    if (ast.isGroup(parent)) {
+        const elements = parent.elements;
+        const index = elements.indexOf(element);
+        for (let i = index - 1; i >= 0; i--) {
+            const item = elements[i];
+            if (ast.isAction(item)) {
+                return item;
+            } else {
+                const action = streamAllContents(elements[i]).find(ast.isAction);
+                if (action) {
+                    return action;
+                }
+            }
+        }
+    }
+    if (ast.isAbstractElement(parent)) {
+        return getActionAtElement(parent);
+    } else {
+        return undefined;
+    }
+}
+
 export type Cardinality = '?' | '*' | '+' | undefined;
 export type Operator = '=' | '+=' | '?=' | undefined;
 

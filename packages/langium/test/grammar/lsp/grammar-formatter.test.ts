@@ -5,7 +5,8 @@
 ******************************************************************************/
 
 import { describe, test } from 'vitest';
-import { EmptyFileSystem, createLangiumGrammarServices, expandToString } from 'langium';
+import { EmptyFileSystem, expandToString } from 'langium';
+import { createLangiumGrammarServices } from 'langium/grammar';
 import { expectFormatting } from 'langium/test';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);

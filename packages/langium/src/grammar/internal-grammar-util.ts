@@ -8,7 +8,7 @@ import { URI } from '../utils/uri-util.js';
 import type { LangiumDocuments } from '../workspace/documents.js';
 import type { AstNode } from '../syntax-tree.js';
 import * as ast from '../grammar/generated/ast.js';
-import { getDocument, streamAllContents } from '../utils/ast-util.js';
+import { getDocument } from '../utils/ast-util.js';
 import { UriUtils } from '../utils/uri-util.js';
 import type { LangiumGrammarServices} from './langium-grammar-module.js';
 import { createLangiumGrammarServices } from './langium-grammar-module.js';
@@ -62,30 +62,6 @@ function isStringTypeInternal(type: ast.AbstractType | ast.TypeDefinition, visit
         }
     }
     return false;
-}
-
-export function getActionAtElement(element: ast.AbstractElement): ast.Action | undefined {
-    const parent = element.$container;
-    if (ast.isGroup(parent)) {
-        const elements = parent.elements;
-        const index = elements.indexOf(element);
-        for (let i = index - 1; i >= 0; i--) {
-            const item = elements[i];
-            if (ast.isAction(item)) {
-                return item;
-            } else {
-                const action = streamAllContents(elements[i]).find(ast.isAction);
-                if (action) {
-                    return action;
-                }
-            }
-        }
-    }
-    if (ast.isAbstractElement(parent)) {
-        return getActionAtElement(parent);
-    } else {
-        return undefined;
-    }
 }
 
 export function getTypeNameWithoutError(type?: ast.AbstractType | ast.InferredType): string | undefined {
