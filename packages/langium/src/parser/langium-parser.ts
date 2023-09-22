@@ -9,7 +9,7 @@ import type { DSLMethodOpts, ILexingError, IOrAlt, IParserErrorMessageProvider, 
 import type { AbstractElement, Action, Assignment, ParserRule } from '../grammar/generated/ast.js';
 import type { Linker } from '../references/linker.js';
 import type { LangiumServices } from '../services.js';
-import type { AstNode, AstReflection, CompositeCstNode, CstNode } from '../syntax-tree.js';
+import type { AstNode, AstReflection, CompositeCstNode, CstNode, MandatoryPropertyType } from '../syntax-tree.js';
 import type { Lexer } from './lexer.js';
 import type { IParserConfig } from './parser-config.js';
 import type { ValueConverter } from './value-converter.js';
@@ -283,12 +283,17 @@ export class LangiumParser extends AbstractLangiumParser {
     private assignMandatoryProperties(obj: any): void {
         const typeMetaData = this.astReflection.getTypeMetaData(obj.$type);
         for (const mandatoryProperty of typeMetaData.mandatory) {
-            const value = obj[mandatoryProperty.name];
-            if (mandatoryProperty.type === 'array' && !Array.isArray(value)) {
-                obj[mandatoryProperty.name] = [];
-            } else if (mandatoryProperty.type === 'primitive' && value === undefined) {
-                obj[mandatoryProperty.name] = mandatoryProperty.defaultValue;
+            if (obj[mandatoryProperty.name] === undefined) {
+                obj[mandatoryProperty.name] = this.copyDefaultValue(mandatoryProperty.defaultValue!);
             }
+        }
+    }
+
+    private copyDefaultValue(propertyType: MandatoryPropertyType): MandatoryPropertyType {
+        if (Array.isArray(propertyType)) {
+            return [...propertyType.map(this.copyDefaultValue)];
+        } else {
+            return propertyType;
         }
     }
 

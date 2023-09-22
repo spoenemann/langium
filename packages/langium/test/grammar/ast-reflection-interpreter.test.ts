@@ -22,7 +22,8 @@ describe('AST reflection interpreter', () => {
                 elementType: {
                     primitive: 'string'
                 }
-            }
+            },
+            defaultValue: 'a'
         }, {
             name: 'Ref',
             astNodes: new Set(),
@@ -43,7 +44,8 @@ describe('AST reflection interpreter', () => {
                 elementType: {
                     primitive: 'string'
                 }
-            }
+            },
+            defaultValue: 'b'
         });
         subType.superTypes.add(superType);
 
@@ -84,10 +86,13 @@ describe('AST reflection interpreter', () => {
             const superMetadata = reflectionForInheritance.getTypeMetaData('Super');
             expect(superMetadata.mandatory).toHaveLength(1);
             expect(superMetadata.mandatory[0].name).toBe('A');
+            expect(superMetadata.mandatory[0].defaultValue).toBe('a');
             const subMetadata = reflectionForInheritance.getTypeMetaData('Sub');
             expect(subMetadata.mandatory).toHaveLength(2);
             expect(subMetadata.mandatory[0].name).toBe('A');
+            expect(subMetadata.mandatory[0].defaultValue).toBe('a');
             expect(subMetadata.mandatory[1].name).toBe('B');
+            expect(subMetadata.mandatory[1].defaultValue).toBe('b');
         });
 
     });

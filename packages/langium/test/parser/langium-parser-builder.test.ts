@@ -651,11 +651,12 @@ describe('Parsing default values', () => {
 
     const grammar = `
         grammar test
-        entry Model returns Model: a=ID b=ID?;
+        entry Model returns Model: a=ID b=ID? (c+=ID)*;
 
         interface Model {
             a: string
             b: string = "hello"
+            c: string[] = ["a", "b", "c"]
         }
 
         terminal ID: /\\w+/;
@@ -668,14 +669,16 @@ describe('Parsing default values', () => {
         parser = await parserFromGrammar(grammar);
     });
 
-    test('Assigns "hello" for "b"', async () => {
+    test('Assigns default values for properties', async () => {
         const result = parser.parse('hi');
         const model = result.value as unknown as {
             a: string
             b: string
+            c: string[]
         };
         expect(model.a).toBe('hi');
         expect(model.b).toBe('hello');
+        expect(model.c).toEqual(['a', 'b', 'c']);
     });
 
     test('Does not overwrite parsed value for "b"', async () => {
@@ -683,9 +686,20 @@ describe('Parsing default values', () => {
         const model = result.value as unknown as {
             a: string
             b: string
+            c: string[]
         };
         expect(model.a).toBe('hi');
         expect(model.b).toBe('world');
+    });
+
+    test('Does not overwrite parsed value for "c"', async () => {
+        const result = parser.parse('hi you d e');
+        const model = result.value as unknown as {
+            a: string
+            b: string
+            c: string[]
+        };
+        expect(model.c).toEqual(['d', 'e']);
     });
 
 });

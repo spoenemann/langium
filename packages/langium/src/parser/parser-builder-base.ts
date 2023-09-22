@@ -10,7 +10,7 @@ import type { BaseParser } from './langium-parser.js';
 import type { AstNode } from '../syntax-tree.js';
 import type { Cardinality } from '../grammar/internal-grammar-util.js';
 import { EMPTY_ALT, EOF } from 'chevrotain';
-import { isAction, isAlternatives, isEndOfFile, isAssignment, isConjunction, isCrossReference, isDisjunction, isGroup, isKeyword, isLiteralCondition, isNegation, isParameterReference, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup } from '../grammar/generated/ast.js';
+import { isAction, isAlternatives, isEndOfFile, isAssignment, isConjunction, isCrossReference, isDisjunction, isGroup, isKeyword, isNegation, isParameterReference, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup, isBooleanLiteral } from '../grammar/generated/ast.js';
 import { assertUnreachable, ErrorWithLocation } from '../utils/errors.js';
 import { stream } from '../utils/stream.js';
 import { getTypeName } from '../grammar/internal-grammar-util.js';
@@ -152,7 +152,7 @@ function buildPredicate(condition: Condition): Predicate {
     } else if (isParameterReference(condition)) {
         const name = condition.parameter.ref!.name;
         return (args) => args !== undefined && args[name] === true;
-    } else if (isLiteralCondition(condition)) {
+    } else if (isBooleanLiteral(condition)) {
         const value = Boolean(condition.true);
         return () => value;
     }

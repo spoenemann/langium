@@ -7,7 +7,7 @@
 import type { Action, Assignment, TypeAttribute } from '../../generated/ast.js';
 import { hasBooleanType } from '../types-util.js';
 import type { AstTypes, Property, PropertyType } from './types.js';
-import { InterfaceType, UnionType } from './types.js';
+import { InterfaceType, UnionType, isArrayType } from './types.js';
 
 export interface PlainAstTypes {
     interfaces: PlainInterface[];
@@ -47,8 +47,10 @@ export interface PlainProperty {
     optional: boolean;
     astNodes: Set<Assignment | Action | TypeAttribute>;
     type: PlainPropertyType;
-    defaultValue?: string | number | boolean;
+    defaultValue?: PlainPropertyDefaultValue;
 }
+
+export type PlainPropertyDefaultValue = string | number | boolean | PlainPropertyDefaultValue[];
 
 export type PlainPropertyType =
     | PlainReferenceType
@@ -161,6 +163,8 @@ function plainToProperty(property: PlainProperty, interfaces: Map<string, Interf
         prop.defaultValue = property.defaultValue;
     } else if (hasBooleanType(prop.type)) {
         prop.defaultValue = false;
+    } else if (isArrayType(prop.type)) {
+        prop.defaultValue = [];
     }
     return prop;
 }

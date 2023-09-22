@@ -153,7 +153,7 @@ export class DomainModelAstReflection extends AbstractAstReflection {
                 return {
                     name: 'Domainmodel',
                     mandatory: [
-                        { name: 'elements', type: 'array' }
+                        { name: 'elements', defaultValue: [] }
                     ]
                 };
             }
@@ -161,7 +161,7 @@ export class DomainModelAstReflection extends AbstractAstReflection {
                 return {
                     name: 'Entity',
                     mandatory: [
-                        { name: 'features', type: 'array' }
+                        { name: 'features', defaultValue: [] }
                     ]
                 };
             }
@@ -169,7 +169,7 @@ export class DomainModelAstReflection extends AbstractAstReflection {
                 return {
                     name: 'Feature',
                     mandatory: [
-                        { name: 'many', type: 'primitive', defaultValue: false }
+                        { name: 'many', defaultValue: false }
                     ]
                 };
             }
@@ -177,7 +177,7 @@ export class DomainModelAstReflection extends AbstractAstReflection {
                 return {
                     name: 'PackageDeclaration',
                     mandatory: [
-                        { name: 'elements', type: 'array' }
+                        { name: 'elements', defaultValue: [] }
                     ]
                 };
             }

@@ -127,8 +127,8 @@ export class StatemachineAstReflection extends AbstractAstReflection {
                 return {
                     name: 'State',
                     mandatory: [
-                        { name: 'actions', type: 'array' },
-                        { name: 'transitions', type: 'array' }
+                        { name: 'actions', defaultValue: [] },
+                        { name: 'transitions', defaultValue: [] }
                     ]
                 };
             }
@@ -136,9 +136,9 @@ export class StatemachineAstReflection extends AbstractAstReflection {
                 return {
                     name: 'Statemachine',
                     mandatory: [
-                        { name: 'commands', type: 'array' },
-                        { name: 'events', type: 'array' },
-                        { name: 'states', type: 'array' }
+                        { name: 'commands', defaultValue: [] },
+                        { name: 'events', defaultValue: [] },
+                        { name: 'states', defaultValue: [] }
                     ]
                 };
             }

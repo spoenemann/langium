@@ -259,6 +259,9 @@ describe('validate declared types', () => {
             property: 'name'
         });
     });
+});
+
+describe('validate declared default value properties', () => {
 
     test('Does not report false positive cyclic type definition', async () => {
         const validationResult = await validate(`
@@ -323,6 +326,48 @@ describe('validate declared types', () => {
         const grammar = validationResult.document.parseResult.value;
         // eslint-disable-next-line quotes
         expectError(validationResult, `Cannot assign default value of type '"C"' to type '"A" | "B"'.`, {
+            node: grammar.interfaces[0].attributes[0],
+            property: 'defaultValue'
+        });
+    });
+
+    test('Validate correct default value assignment with number array constant', async () => {
+        const validationResult = await validate(`
+            interface Test {
+                value: number[] = [0, 24, 42];
+            }
+        `);
+        expectNoIssues(validationResult);
+    });
+
+    test('Validate correct default value assignment with empty array constant', async () => {
+        const validationResult = await validate(`
+            interface Test {
+                value: number[] = [];
+            }
+        `);
+        expectNoIssues(validationResult);
+    });
+
+    test('Validate correct default value assignment with nested array constant', async () => {
+        const validationResult = await validate(`
+            interface Test {
+                value: (number[])[] = [[42]];
+            }
+        `);
+        expectNoIssues(validationResult);
+    });
+
+    test('Validate incorrect default value assignment with array constant', async () => {
+        const validationResult = await validate(`
+            interface Test {
+                value: (number | string)[] = ['a', 1, true];
+            }
+        `);
+        expect(validationResult.diagnostics).toHaveLength(1);
+        const grammar = validationResult.document.parseResult.value;
+        // eslint-disable-next-line quotes
+        expectError(validationResult, `Cannot assign default value of type '("a" | boolean | number)[]' to type '(number | string)[]'.`, {
             node: grammar.interfaces[0].attributes[0],
             property: 'defaultValue'
         });

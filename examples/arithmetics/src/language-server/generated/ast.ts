@@ -187,7 +187,7 @@ export class ArithmeticsAstReflection extends AbstractAstReflection {
                 return {
                     name: 'Definition',
                     mandatory: [
-                        { name: 'args', type: 'array' }
+                        { name: 'args', defaultValue: [] }
                     ]
                 };
             }
@@ -195,7 +195,7 @@ export class ArithmeticsAstReflection extends AbstractAstReflection {
                 return {
                     name: 'FunctionCall',
                     mandatory: [
-                        { name: 'args', type: 'array' }
+                        { name: 'args', defaultValue: [] }
                     ]
                 };
             }
@@ -203,7 +203,7 @@ export class ArithmeticsAstReflection extends AbstractAstReflection {
                 return {
                     name: 'Module',
                     mandatory: [
-                        { name: 'statements', type: 'array' }
+                        { name: 'statements', defaultValue: [] }
                     ]
                 };
             }

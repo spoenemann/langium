@@ -3,8 +3,9 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
+
 import type { GeneratorNode, Grammar, LangiumServices } from 'langium';
-import type { AstTypes, Property } from 'langium/types';
+import type { AstTypes, Property, PropertyDefaultValue } from 'langium/types';
 import type { LangiumConfig } from '../package.js';
 import { IndentNode, CompositeGeneratorNode, NL, toString, streamAllContents, MultiMap, GrammarAST } from 'langium';
 import { collectAst, collectTypeHierarchy, findReferenceTypes, hasArrayType, isAstType, hasBooleanType, mergeTypesAndInterfaces } from 'langium/types';
@@ -125,17 +126,23 @@ function buildMandatoryType(props: Property[]): GeneratorNode {
     const indent = new IndentNode();
     for (let i = 0; i < props.length; i++) {
         const property = props[i];
-        const type = property.defaultValue !== undefined ? 'primitive' : 'array';
-        indent.append("{ name: '", property.name, "', type: '", type, "'");
         if (property.defaultValue !== undefined) {
-            const defaultValue =typeof property.defaultValue === 'string'
-                ? `"${property.defaultValue}"`
-                : property.defaultValue.toString();
-            indent.append(', defaultValue: ', defaultValue);
+            indent.append("{ name: '", property.name, "'");
+            indent.append(', defaultValue: ', stringifyDefaultValue(property.defaultValue));
+            indent.append(' }', i < props.length - 1 ? ',' : '', NL);
         }
-        indent.append(' }', i < props.length - 1 ? ',' : '', NL);
     }
     return indent;
+}
+
+function stringifyDefaultValue(value: PropertyDefaultValue): string {
+    if (typeof value === 'string') {
+        return `"${value}"`;
+    } else if (Array.isArray(value)) {
+        return `[${value.map(e => stringifyDefaultValue(e)).join(', ')}]`;
+    } else {
+        return value.toString();
+    }
 }
 
 function buildReferenceTypeMethod(crossReferenceTypes: CrossReferenceType[]): GeneratorNode {

@@ -139,7 +139,7 @@ export class RequirementsAndTestsAstReflection extends AbstractAstReflection {
                 return {
                     name: 'Requirement',
                     mandatory: [
-                        { name: 'environments', type: 'array' }
+                        { name: 'environments', defaultValue: [] }
                     ]
                 };
             }
@@ -147,8 +147,8 @@ export class RequirementsAndTestsAstReflection extends AbstractAstReflection {
                 return {
                     name: 'RequirementModel',
                     mandatory: [
-                        { name: 'environments', type: 'array' },
-                        { name: 'requirements', type: 'array' }
+                        { name: 'environments', defaultValue: [] },
+                        { name: 'requirements', defaultValue: [] }
                     ]
                 };
             }
@@ -156,8 +156,8 @@ export class RequirementsAndTestsAstReflection extends AbstractAstReflection {
                 return {
                     name: 'Test',
                     mandatory: [
-                        { name: 'environments', type: 'array' },
-                        { name: 'requirements', type: 'array' }
+                        { name: 'environments', defaultValue: [] },
+                        { name: 'requirements', defaultValue: [] }
                     ]
                 };
             }
@@ -165,7 +165,7 @@ export class RequirementsAndTestsAstReflection extends AbstractAstReflection {
                 return {
                     name: 'TestModel',
                     mandatory: [
-                        { name: 'tests', type: 'array' }
+                        { name: 'tests', defaultValue: [] }
                     ]
                 };
             }

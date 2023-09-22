@@ -12,7 +12,7 @@ import type { DeclaredInfo, InferredInfo, LangiumGrammarDocument, ValidationReso
 import * as ast from '../generated/ast.js';
 import { MultiMap } from '../../utils/collections.js';
 import { extractAssignments } from '../internal-grammar-util.js';
-import { flattenPropertyUnion, InterfaceType, isArrayType, isInterfaceType, isMandatoryPropertyType, isPropertyUnion, isReferenceType, isTypeAssignable, isUnionType, isValueType, propertyTypeToString } from '../type-system/type-collector/types.js';
+import { flattenPropertyUnion, InterfaceType, isArrayType, isInterfaceType, isMandatoryPropertyType, isPrimitiveType, isPropertyUnion, isReferenceType, isStringType, isTypeAssignable, isUnionType, isValueType, propertyTypeToString } from '../type-system/type-collector/types.js';
 import { isDeclared, isInferred, isInferredAndDeclared } from '../workspace/documents.js';
 
 export function registerTypeValidationChecks(services: LangiumGrammarServices): void {
@@ -118,14 +118,49 @@ function matchInterfaceAttributes(resources: ValidationResources, grammarInterfa
 }
 
 function getDefaultValueType(defaultValue?: ast.ValueLiteral): PropertyType | undefined {
-    if (ast.isLiteralCondition(defaultValue)) {
+    if (ast.isBooleanLiteral(defaultValue)) {
         return { primitive: 'boolean' };
     } else if (ast.isNumberLiteral(defaultValue)) {
         return { primitive: 'number' };
     } else if (ast.isStringLiteral(defaultValue)) {
         return { string: defaultValue.value };
+    } else if (ast.isArrayLiteral(defaultValue)) {
+        return { elementType: generateElementType(defaultValue) };
     } else {
         return undefined;
+    }
+}
+
+function generateElementType(arrayLiteral: ast.ArrayLiteral): PropertyType | undefined {
+    if (arrayLiteral.elements.length === 0) {
+        return undefined;
+    }
+    const foundTypes: PropertyType[] = [];
+    for (const element of arrayLiteral.elements) {
+        const elementType = getDefaultValueType(element);
+        if (!elementType) {
+            continue;
+        }
+        if (isPrimitiveType(elementType)) {
+            if (!(foundTypes.some(e => isPrimitiveType(e) && e.primitive === elementType.primitive))) {
+                foundTypes.push(elementType);
+            }
+        } else if (isStringType(elementType)) {
+            if (!(foundTypes.some(e => isStringType(e) && e.string === elementType.string))) {
+                foundTypes.push(elementType);
+            }
+        } else {
+            foundTypes.push(elementType);
+        }
+    }
+    if (foundTypes.length === 0) {
+        return undefined;
+    } else if (foundTypes.length === 1) {
+        return foundTypes[0];
+    } else {
+        return {
+            types: foundTypes
+        };
     }
 }
 
@@ -344,7 +379,7 @@ function validatePropertiesConsistency(
     const matchingProp = (type: PropertyType): PropertyType => {
         if (isPropertyUnion(type)) return { types: type.types.map(t => matchingProp(t)) };
         if (isReferenceType(type)) return { referenceType: matchingProp(type.referenceType) };
-        if (isArrayType(type)) return { elementType: matchingProp(type.elementType) };
+        if (isArrayType(type)) return { elementType: type.elementType && matchingProp(type.elementType) };
         if (isValueType(type)) {
             const resource = resources.typeToValidationInfo.get(type.value.name);
             if (!resource) return type;

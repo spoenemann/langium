@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstReflection, ReferenceInfo, TypeMandatoryProperty, TypeMetaData } from '../syntax-tree.js';
+import type { AstReflection, ReferenceInfo, MandatoryProperty, TypeMetaData } from '../syntax-tree.js';
 import type { LangiumDocuments } from '../workspace/documents.js';
 import type { Grammar } from './generated/ast.js';
 import type { AstTypes, Property } from './type-system/type-collector/types.js';
@@ -12,7 +12,7 @@ import { AbstractAstReflection } from '../syntax-tree.js';
 import { MultiMap } from '../utils/collections.js';
 import { isGrammar } from './generated/ast.js';
 import { collectAst } from './type-system/ast-collector.js';
-import { collectTypeHierarchy, findReferenceTypes, hasArrayType, isAstType, mergeTypesAndInterfaces } from './type-system/types-util.js';
+import { collectTypeHierarchy, findReferenceTypes, isAstType, mergeTypesAndInterfaces } from './type-system/types-util.js';
 
 export function interpretAstReflection(astTypes: AstTypes): AstReflection;
 export function interpretAstReflection(grammar: Grammar, documents?: LangiumDocuments): AstReflection;
@@ -112,28 +112,25 @@ function buildTypeMetaData(astTypes: AstTypes): Map<string, TypeMetaData> {
     const map = new Map<string, TypeMetaData>();
     for (const interfaceType of astTypes.interfaces) {
         const props = interfaceType.superProperties;
-        const mandatoryProps = props.filter(e => e.defaultValue !== undefined || hasArrayType(e.type));
-        if (mandatoryProps.length > 0) {
-            map.set(interfaceType.name, {
-                name: interfaceType.name,
-                mandatory: buildMandatoryMetaData(mandatoryProps)
-            });
-        }
+        map.set(interfaceType.name, {
+            name: interfaceType.name,
+            mandatory: buildMandatoryMetaData(props)
+        });
     }
     return map;
 }
 
-function buildMandatoryMetaData(props: Property[]): TypeMandatoryProperty[] {
-    const array: TypeMandatoryProperty[] = [];
+function buildMandatoryMetaData(props: Property[]): MandatoryProperty[] {
+    const array: MandatoryProperty[] = [];
     const all = props.sort((a, b) => a.name.localeCompare(b.name));
     for (const property of all) {
-        const type = property.defaultValue !== undefined ? 'primitive' : 'array';
-        const mandatoryProperty: TypeMandatoryProperty = {
-            name: property.name,
-            defaultValue: property.defaultValue,
-            type
-        };
-        array.push(mandatoryProperty);
+        if (property.defaultValue !== undefined) {
+            const mandatoryProperty: MandatoryProperty = {
+                name: property.name,
+                defaultValue: property.defaultValue
+            };
+            array.push(mandatoryProperty);
+        }
     }
     return array;
 }

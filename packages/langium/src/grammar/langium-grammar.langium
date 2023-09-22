@@ -18,19 +18,23 @@ Interface:
     ('extends' superTypes+=[AbstractType:ID] (',' superTypes+=[AbstractType:ID])*)?
     '{' 
         attributes+=TypeAttribute* 
-    '}' 
+    '}'
 ';'?;
 
 TypeAttribute:
     name=FeatureName (isOptional?='?')? ':' type=TypeDefinition ('=' defaultValue=ValueLiteral)? ';'?;
 
 ValueLiteral:
-    StringLiteral | NumberLiteral | LiteralCondition;
+    StringLiteral | NumberLiteral | BooleanLiteral | ArrayLiteral;
 
 StringLiteral:
     value=STRING;
 NumberLiteral:
     value=NUMBER;
+BooleanLiteral:
+    true?='true' | 'false';
+ArrayLiteral:
+    '[' (elements+=ValueLiteral (',' elements+=ValueLiteral)*)? ']';
 
 TypeDefinition: UnionType;
 
@@ -124,9 +128,6 @@ NamedArgument:
     ( parameter=[Parameter:ID] calledByName?='=')?
     ( value=Disjunction );
 
-LiteralCondition:
-    true?='true' | 'false';
-
 Disjunction infers Condition:
     Conjunction ({infer Disjunction.left=current} '|' right=Conjunction)*;
 
@@ -137,7 +138,7 @@ Negation infers Condition:
     Atom | {infer Negation} '!' value=Negation;
 
 Atom infers Condition:
-    ParameterReference | ParenthesizedCondition | LiteralCondition;
+    ParameterReference | ParenthesizedCondition | BooleanLiteral;
 
 ParenthesizedCondition infers Condition:
     '(' Disjunction ')';
@@ -217,7 +218,7 @@ CharacterRange infers AbstractElement:
     {infer CharacterRange} left=Keyword ('..' right=Keyword)?;
 
 FeatureName returns string:
-    'Infinity' | 'NaN' | 'undefined' | 'current' | 'entry' | 'extends' | 'false' | 'fragment' | 'grammar' | 'hidden' | 'import' | 'interface' | 'returns' | 'terminal' | 'true' | 'type' | 'infer' | 'infers' | 'with' | PrimitiveType | ID;
+    'current' | 'entry' | 'extends' | 'false' | 'fragment' | 'grammar' | 'hidden' | 'import' | 'interface' | 'returns' | 'terminal' | 'true' | 'type' | 'infer' | 'infers' | 'with' | PrimitiveType | ID;
 
 terminal ID: /\^?[_a-zA-Z][\w_]*/;
 terminal STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/;

@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Interface, Type, TypeDefinition} from '../../generated/ast.js';
-import { isLiteralCondition } from '../../generated/ast.js';
-import type { PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyType, PlainUnion } from './plain-types.js';
+import type { Interface, Type, TypeDefinition, ValueLiteral} from '../../generated/ast.js';
+import { isArrayLiteral, isBooleanLiteral } from '../../generated/ast.js';
+import type { PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyDefaultValue, PlainPropertyType, PlainUnion } from './plain-types.js';
 import { isArrayType, isReferenceType, isUnionType, isSimpleType } from '../../generated/ast.js';
 import { getTypeName, getTypeNameWithoutError, isPrimitiveType } from '../../internal-grammar-util.js';
 
@@ -24,11 +24,7 @@ export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): P
                 type: typeDefinitionToPropertyType(attribute.type)
             };
             if (attribute.defaultValue) {
-                if (isLiteralCondition(attribute.defaultValue)) {
-                    property.defaultValue = attribute.defaultValue.true;
-                } else {
-                    property.defaultValue = attribute.defaultValue.value;
-                }
+                property.defaultValue = toPropertyDefaultValue(attribute.defaultValue);
             }
             properties.push(property);
         }
@@ -62,6 +58,16 @@ export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): P
     }
 
     return declaredTypes;
+}
+
+function toPropertyDefaultValue(literal: ValueLiteral): PlainPropertyDefaultValue {
+    if (isBooleanLiteral(literal)) {
+        return literal.true;
+    } else if (isArrayLiteral(literal)) {
+        return literal.elements.map(toPropertyDefaultValue);
+    } else {
+        return literal.value;
+    }
 }
 
 export function typeDefinitionToPropertyType(type: TypeDefinition): PlainPropertyType {
