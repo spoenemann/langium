@@ -5,7 +5,8 @@
  ******************************************************************************/
 
 import { CompositeGeneratorNode, toString } from 'langium';
-import { type Definition, type Evaluation, isDefinition, type Module, type Statement, type Expression, isNumberLiteral } from '../language-server/generated/ast.js';
+import { type Definition, type Evaluation, isDefinition, type Module, type Statement } from '../language-server/generated/ast.js';
+import { type Expression, isNumberLiteral } from '../language-server/generated/ast.js';
 import llvm from 'llvm-bindings';
 
 type LLVMData = {
@@ -14,15 +15,35 @@ type LLVMData = {
     builder: llvm.IRBuilder,
 }
 
-export function generateLLVMIR(exprSet: Module): string {
+const CustomLLVMConfig = {
+    TARGET_TRIPLE: 'arm64-apple-macosx14.0.0'
+};
+
+export function generateLLVMIR(exprSet: Module, fileName: string): string {
     const context = new llvm.LLVMContext();
-    const module = new llvm.Module(exprSet.name, context);
+    const module = new llvm.Module(fileName, context);
+    // TODO: returns not correct target triple
+    // module.setTargetTriple(llvm.config.LLVM_DEFAULT_TARGET_TRIPLE);
+    module.setTargetTriple(CustomLLVMConfig.TARGET_TRIPLE);
     const builder = new llvm.IRBuilder(context);
+    const llvmData = { context, module, builder };
+
+    setupExternFunctions(llvmData);
 
     const fileNode = new CompositeGeneratorNode();
-    fileNode.append(generateLLVMIRinternal(exprSet.statements, { context, module, builder }));
+    fileNode.append(generateLLVMIRinternal(exprSet.statements, llvmData));
 
     return toString(fileNode);
+}
+
+function setupExternFunctions(llvmData: LLVMData) {
+    const bytePtrTy: llvm.PointerType[] = [llvmData.builder.getInt8PtrTy()];
+
+    llvmData.module.getOrInsertFunction('printf', llvm.FunctionType.get(
+        /* return type */ llvmData.builder.getInt32Ty(),
+        /* foramt arg */ bytePtrTy,
+        /* vararg */ true
+    ));
 }
 
 function generateLLVMIRinternal(statements: Statement[], llvmData: LLVMData): string {
@@ -54,6 +75,12 @@ function generateDefinition(def: Definition, llvmData: LLVMData): void {
 
     const entryBB = llvm.BasicBlock.Create(context, 'main', func);
     builder.SetInsertPoint(entryBB);
+
+    const str = builder.CreateGlobalStringPtr('HelloWorld', 'str', 0, module);
+    const printfFn = llvmData.module.getFunction('printf');
+    if (printfFn) {
+        llvmData.builder.CreateCall(printfFn, [str], 'qwe');
+    }
 
     const namedValues = new Map<string, llvm.Argument>();
     for (let i = 0; i < def.args.length; i++) {

@@ -30,9 +30,9 @@ export const generateAction = async (fileName: string, opts: GenerateOptions): P
 
     if (opts.target === undefined || opts.target === 'llvmir') {
         const generatedFilePath = `${path.join(filePathData.destination, filePathData.name)}.ll`;
-        const fileContent = generateLLVMIR(module);
+        const fileContent = generateLLVMIR(module, fileName);
         if (fileContent !== 'error') {
-            fs.writeFileSync(generatedFilePath, generateLLVMIR(module));
+            fs.writeFileSync(generatedFilePath, fileContent);
             console.log(chalk.green(`LLVM IR code generated successfully: ${generatedFilePath}`));
         } else {
             console.log(chalk.red('LLVM IR code generation failed!'));
