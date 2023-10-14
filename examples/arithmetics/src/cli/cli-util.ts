@@ -38,6 +38,6 @@ export async function extractDocument<T extends AstNode>(fileName: string, exten
     return document as LangiumDocument<T>;
 }
 
-export async function extractAstNode<T extends AstNode>(fileName: string, extensions: string[], services: LangiumServices): Promise<T> {
+export async function extractAstNode<T extends AstNode>(fileName: string, extensions: readonly string[], services: LangiumServices): Promise<T> {
     return (await extractDocument(fileName, extensions, services)).parseResult.value as T;
 }

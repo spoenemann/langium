@@ -11,6 +11,8 @@ import { evalAction } from './interpreter.js';
 import * as url from 'node:url';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import { generateAction } from './generator.js';
+
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
 const packagePath = path.resolve(__dirname, '..', '..', 'package.json');
@@ -25,5 +27,12 @@ program
     .argument('<file>', `possible file extensions: ${ArithmeticsLanguageMetaData.fileExtensions.join(', ')}`)
     .description('calculates Evaluations in the source file')
     .action(evalAction);
+
+program
+    .command('generate')
+    .argument('<file>', `source file (possible file extensions: ${ArithmeticsLanguageMetaData.fileExtensions.join(', ')}`)
+    .option('-d, --destination <dir>', 'generating destination directory')
+    .description('generates LLVM IR for a source file')
+    .action(generateAction);
 
 program.parse(process.argv);
