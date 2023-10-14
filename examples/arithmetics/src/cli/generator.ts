@@ -23,15 +23,20 @@ export const generateAction = async (fileName: string, opts: GenerateOptions): P
     const services = createArithmeticsServices(NodeFileSystem).arithmetics;
     const module = await extractAstNode<Module>(fileName, ArithmeticsLanguageMetaData.fileExtensions, services);
 
-    const filePathData = extractDestinationAndName(fileName, opts.destination);
+    const filePathData = extractDestinationAndName(module.name, opts.destination);
     if (!fs.existsSync(filePathData.destination)) {
         fs.mkdirSync(filePathData.destination, { recursive: true });
     }
 
     if (opts.target === undefined || opts.target === 'llvmir') {
         const generatedFilePath = `${path.join(filePathData.destination, filePathData.name)}.ll`;
-        fs.writeFileSync(generatedFilePath, generateLLVMIR(module));
-        console.log(chalk.green(`LLVM IR code generated successfully: ${generatedFilePath}`));
+        const fileContent = generateLLVMIR(module);
+        if (fileContent !== 'error') {
+            fs.writeFileSync(generatedFilePath, generateLLVMIR(module));
+            console.log(chalk.green(`LLVM IR code generated successfully: ${generatedFilePath}`));
+        } else {
+            console.log(chalk.red('LLVM IR code generation failed!'));
+        }
     }
 };
 
