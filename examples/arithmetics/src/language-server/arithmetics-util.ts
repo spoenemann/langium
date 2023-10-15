@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { BinaryExpression } from './generated/ast.js';
+import type { BinaryExpression, Condition } from './generated/ast.js';
 
 export function applyOp(op: BinaryExpression['operator']): (x: number, y: number) => number {
     switch (op) {
@@ -19,6 +19,18 @@ export function applyOp(op: BinaryExpression['operator']): (x: number, y: number
             }
             return x / y;
         };
+        default: throw new Error('Unknown operator: ' + op);
+    }
+}
+
+export function applyConditionOp(op: Condition['operator']): (x: number, y: number) => boolean {
+    switch (op) {
+        case '==': return (x, y) => x === y;
+        case '!=': return (x, y) => x !== y;
+        case '<': return (x, y) => x < y;
+        case '<=': return (x, y) => x <= y;
+        case '>': return (x, y) => x > y;
+        case '>=': return (x, y) => x >= y;
         default: throw new Error('Unknown operator: ' + op);
     }
 }

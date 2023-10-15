@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { CompositeGeneratorNode, toString } from 'langium';
-import { type Definition, type Evaluation, type Module, type Statement, isEvaluation, type Expression, isFunctionCall } from '../language-server/generated/ast.js';
+import { type Definition, type Evaluation, type Module, type Statement, isEvaluation, type Expression, isFunctionCall, isIf } from '../language-server/generated/ast.js';
 import { isNumberLiteral } from '../language-server/generated/ast.js';
 import llvm from 'llvm-bindings';
 
@@ -147,7 +147,7 @@ function generateFunction(def: Definition, llvmData: LLVMData): void {
 }
 
 function generateExpression(expr: Expression, llvmData: LLVMData, namedValues: Map<string, llvm.Value>): llvm.Value {
-    const { builder, module } = llvmData;
+    const { context, builder, module } = llvmData;
 
     if (isNumberLiteral(expr)) {
         return llvm.ConstantFP.get(builder.getDoubleTy(), expr.value);
@@ -166,6 +166,57 @@ function generateExpression(expr: Expression, llvmData: LLVMData, namedValues: M
             }
         }
         throw new Error(`LLVM IR generation: no function '${expr.func.$refText}' [the case must be covered by the validator].`);
+    } else if (isIf(expr)) {
+        const left = generateExpression(expr.condition.left, llvmData, namedValues);
+        const right = generateExpression(expr.condition.right, llvmData, namedValues);
+
+        let condValue: llvm.Value | undefined = undefined;
+        if (expr.condition.operator === '==') {
+            condValue = builder.CreateFCmpOEQ(left, right);
+        } else if (expr.condition.operator === '!=') {
+            condValue = builder.CreateFCmpONE(left, right);
+        } else if (expr.condition.operator === '<') {
+            condValue = builder.CreateFCmpOLT(left, right);
+        } else if (expr.condition.operator === '<=') {
+            condValue = builder.CreateFCmpOLE(left, right);
+        } else if (expr.condition.operator === '>') {
+            condValue = builder.CreateFCmpOGT(left, right);
+        } else if (expr.condition.operator === '>=') {
+            condValue = builder.CreateFCmpOGE(left, right);
+        } else {
+            throw new Error(`LLVM IR generation: unsupported operation: ${expr.condition.operator}.`);
+        }
+
+        const parentFunc = builder.GetInsertBlock()?.getParent();
+        if (parentFunc) {
+            let thenBB = llvm.BasicBlock.Create(context, 'then', parentFunc!);
+            let elseBB = llvm.BasicBlock.Create(context, 'else');
+            const mergeBB = llvm.BasicBlock.Create(context, 'ifcont');
+
+            builder.CreateCondBr(condValue!, thenBB, elseBB);
+            builder.SetInsertPoint(thenBB);
+
+            const thenV = generateExpression(expr.then, llvmData, namedValues);
+            builder.CreateBr(mergeBB);
+            thenBB = builder.GetInsertBlock()!;
+
+            parentFunc.insertAfter(parentFunc.getExitBlock(), elseBB);
+            builder.SetInsertPoint(elseBB);
+
+            const elseV = generateExpression(expr.else, llvmData, namedValues);
+            builder.CreateBr(mergeBB);
+            elseBB = builder.GetInsertBlock()!;
+
+            parentFunc.insertAfter(parentFunc.getExitBlock(), mergeBB);
+            builder.SetInsertPoint(mergeBB);
+
+            const phi = builder.CreatePHI(builder.getDoubleTy(), 2, 'iftmp');
+            phi.addIncoming(thenV, thenBB);
+            phi.addIncoming(elseV, elseBB);
+
+            return phi;
+        }
+        throw new Error('LLVM IR generation: parental function is unavailable for if generation.');
     } else {
         const left = generateExpression(expr.left, llvmData, namedValues);
         const right = generateExpression(expr.right, llvmData, namedValues);
@@ -179,13 +230,15 @@ function generateExpression(expr: Expression, llvmData: LLVMData, namedValues: M
             return builder.CreateFDiv(left, right);
         } else if (expr.operator === '%') {
             return builder.CreateFRem(left, right);
-        } else {
+        } else if (expr.operator === '^') {
             const pow = module.getFunction('pow');
             if (pow) {
                 return builder.CreateCall(pow, [left, right]);
             } else {
                 throw new Error('LLVM IR generation: \'pow\' was not found.');
             }
+        } else {
+            throw new Error(`LLVM IR generation: unsupported operation: ${expr.operator}.`);
         }
     }
 }

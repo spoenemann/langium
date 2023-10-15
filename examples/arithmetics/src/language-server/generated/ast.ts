@@ -23,7 +23,7 @@ export function isAbstractDefinition(item: unknown): item is AbstractDefinition 
     return reflection.isInstance(item, AbstractDefinition);
 }
 
-export type Expression = BinaryExpression | FunctionCall | NumberLiteral;
+export type Expression = BinaryExpression | FunctionCall | If | NumberLiteral;
 
 export const Expression = 'Expression';
 
@@ -40,7 +40,7 @@ export function isStatement(item: unknown): item is Statement {
 }
 
 export interface BinaryExpression extends AstNode {
-    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
+    readonly $container: BinaryExpression | Condition | Definition | Evaluation | FunctionCall | If;
     readonly $type: 'BinaryExpression';
     left: Expression
     operator: '%' | '*' | '+' | '-' | '/' | '^'
@@ -51,6 +51,20 @@ export const BinaryExpression = 'BinaryExpression';
 
 export function isBinaryExpression(item: unknown): item is BinaryExpression {
     return reflection.isInstance(item, BinaryExpression);
+}
+
+export interface Condition extends AstNode {
+    readonly $container: If;
+    readonly $type: 'Condition';
+    left: Expression
+    operator: '!=' | '<' | '<=' | '==' | '>' | '>='
+    right: Expression
+}
+
+export const Condition = 'Condition';
+
+export function isCondition(item: unknown): item is Condition {
+    return reflection.isInstance(item, Condition);
 }
 
 export interface DeclaredParameter extends AstNode {
@@ -92,7 +106,7 @@ export function isEvaluation(item: unknown): item is Evaluation {
 }
 
 export interface FunctionCall extends AstNode {
-    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
+    readonly $container: BinaryExpression | Condition | Definition | Evaluation | FunctionCall | If;
     readonly $type: 'FunctionCall';
     args: Array<Expression>
     func: Reference<AbstractDefinition>
@@ -102,6 +116,20 @@ export const FunctionCall = 'FunctionCall';
 
 export function isFunctionCall(item: unknown): item is FunctionCall {
     return reflection.isInstance(item, FunctionCall);
+}
+
+export interface If extends AstNode {
+    readonly $container: BinaryExpression | Condition | Definition | Evaluation | FunctionCall | If;
+    readonly $type: 'If';
+    condition: Condition
+    else: Expression
+    then: Expression
+}
+
+export const If = 'If';
+
+export function isIf(item: unknown): item is If {
+    return reflection.isInstance(item, If);
 }
 
 export interface Module extends AstNode {
@@ -117,7 +145,7 @@ export function isModule(item: unknown): item is Module {
 }
 
 export interface NumberLiteral extends AstNode {
-    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
+    readonly $container: BinaryExpression | Condition | Definition | Evaluation | FunctionCall | If;
     readonly $type: 'NumberLiteral';
     value: number
 }
@@ -131,11 +159,13 @@ export function isNumberLiteral(item: unknown): item is NumberLiteral {
 export type ArithmeticsAstType = {
     AbstractDefinition: AbstractDefinition
     BinaryExpression: BinaryExpression
+    Condition: Condition
     DeclaredParameter: DeclaredParameter
     Definition: Definition
     Evaluation: Evaluation
     Expression: Expression
     FunctionCall: FunctionCall
+    If: If
     Module: Module
     NumberLiteral: NumberLiteral
     Statement: Statement
@@ -144,13 +174,14 @@ export type ArithmeticsAstType = {
 export class ArithmeticsAstReflection extends AbstractAstReflection {
 
     getAllTypes(): string[] {
-        return ['AbstractDefinition', 'BinaryExpression', 'DeclaredParameter', 'Definition', 'Evaluation', 'Expression', 'FunctionCall', 'Module', 'NumberLiteral', 'Statement'];
+        return ['AbstractDefinition', 'BinaryExpression', 'Condition', 'DeclaredParameter', 'Definition', 'Evaluation', 'Expression', 'FunctionCall', 'If', 'Module', 'NumberLiteral', 'Statement'];
     }
 
     protected override computeIsSubtype(subtype: string, supertype: string): boolean {
         switch (subtype) {
             case BinaryExpression:
             case FunctionCall:
+            case If:
             case NumberLiteral: {
                 return this.isSubtype(Expression, supertype);
             }

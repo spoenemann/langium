@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 import type { AbstractDefinition, Definition, Evaluation, Expression, Module, Statement } from './generated/ast.js';
-import { isBinaryExpression, isDefinition, isEvaluation, isFunctionCall, isNumberLiteral } from './generated/ast.js';
-import { applyOp } from './arithmetics-util.js';
+import { isBinaryExpression, isDefinition, isEvaluation, isFunctionCall, isIf, isNumberLiteral } from './generated/ast.js';
+import { applyConditionOp, applyOp } from './arithmetics-util.js';
 
 export function interpretEvaluations(module: Module): Map<Evaluation, number> {
     const ctx = <InterpreterContext>{
@@ -63,6 +63,13 @@ export function evalExpression(expr: Expression, ctx?: InterpreterContext): numb
     }
     if (isNumberLiteral(expr)) {
         return +expr.value;
+    }
+    if (isIf(expr)) {
+        const left = evalExpression(expr.condition.left, ctx);
+        const right = evalExpression(expr.condition.right, ctx);
+        return applyConditionOp(expr.condition.operator)(left, right) ?
+            evalExpression(expr.then, ctx) :
+            evalExpression(expr.else, ctx);
     }
     if (isFunctionCall(expr)) {
         const valueOrDef = ctx.context.get((expr.func.ref as AbstractDefinition).name) as number | Definition;

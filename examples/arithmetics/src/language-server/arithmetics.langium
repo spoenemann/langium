@@ -37,7 +37,11 @@ Modulo infers Expression:
 PrimaryExpression infers Expression:
     '(' Expression ')' |
     {infer NumberLiteral} value=NUMBER |
-    {infer FunctionCall} func=[AbstractDefinition] ('(' args+=Expression (',' args+=Expression)* ')')?;
+    {infer FunctionCall} func=[AbstractDefinition] ('(' args+=Expression (',' args+=Expression)* ')')? |
+    {infer If} 'if' condition=Condition 'then' then=PrimaryExpression 'else' else=PrimaryExpression;
+
+Condition:
+    left=Expression operator=('==' | '!=' | '<' | '<=' | '>' | '>=') right=Expression;
 
 hidden terminal WS: /\s+/;
 terminal ID: /[_a-zA-Z][\w_]*/;
