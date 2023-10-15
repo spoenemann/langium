@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { CompositeGeneratorNode, toString } from 'langium';
-import { type Definition, type Evaluation, type Module, type Statement, isEvaluation, type Expression, isBinaryExpression, isFunctionCall } from '../language-server/generated/ast.js';
+import { type Definition, type Evaluation, type Module, type Statement, isEvaluation, type Expression, isFunctionCall } from '../language-server/generated/ast.js';
 import { isNumberLiteral } from '../language-server/generated/ast.js';
 import llvm from 'llvm-bindings';
 
@@ -14,7 +14,7 @@ type LLVMData = {
     module: llvm.Module,
     builder: llvm.IRBuilder,
     globalVars: Map<string, llvm.Constant>,
-    mainVars: Map<string, llvm.AllocaInst>
+    mainVars: Map<string, llvm.Value>,
 }
 
 const CustomLLVMConfig = {
@@ -23,15 +23,17 @@ const CustomLLVMConfig = {
 
 export function generateLLVMIR(exprSet: Module, fileName: string): string {
     const context = new llvm.LLVMContext();
+
     const module = new llvm.Module(fileName, context);
     // TODO: returns not correct target triple
     // module.setTargetTriple(llvm.config.LLVM_DEFAULT_TARGET_TRIPLE);
     module.setTargetTriple(CustomLLVMConfig.TARGET_TRIPLE);
+
     const builder = new llvm.IRBuilder(context);
     const globalVars = new Map<string, llvm.Constant>();
-    const mainVars = new Map<string, llvm.AllocaInst>();
-    const llvmData = { context, module, builder, globalVars, mainVars };
+    const mainVars = new Map<string, llvm.Value>();
 
+    const llvmData = { context, module, builder, globalVars, mainVars };
     setupExternFunctions(llvmData);
 
     const fileNode = new CompositeGeneratorNode();
@@ -51,33 +53,23 @@ function setupExternFunctions(llvmData: LLVMData) {
         /* foramt arg */  bytePtrTy,
         /* vararg */      true
     ));
+
+    llvmData.module.getOrInsertFunction('pow', llvm.FunctionType.get(
+        /* return type */ llvmData.builder.getDoubleTy(),
+        /* foramt arg */  [llvmData.builder.getDoubleTy(), llvmData.builder.getDoubleTy()],
+        /* vararg */      true
+    ));
 }
 
 function generateLLVMIRinternal(statements: Statement[], llvmData: LLVMData): string {
-    const { module } = llvmData;
-
-    const functions = [];
-    const variables = [];
-    const evaluations = [];
-    for (const stmt of statements) {
-        if (isEvaluation(stmt)) {
-            evaluations.push(stmt);
-        } else {
-            if (stmt.args.length === 0) {
-                variables.push(stmt);
-            } else {
-                functions.push(stmt);
-            }
-        }
-    }
-
-    // functions.forEach(func => generateFunction(func, llvmData));
+    const { functions, variables, evaluations } = splitEntities(statements);
+    functions.forEach(func => generateFunction(func, llvmData));
     generateMainFunction(variables, evaluations, llvmData);
 
-    if (llvm.verifyModule(module)) {
+    if (llvm.verifyModule(llvmData.module)) {
         return 'Verifying module failed';
     }
-    return module.print();
+    return llvmData.module.print();
 }
 
 function generateMainFunction(variables: Definition[], evaluations: Evaluation[], llvmData: LLVMData): void {
@@ -96,79 +88,117 @@ function generateMainFunction(variables: Definition[], evaluations: Evaluation[]
     builder.CreateRet(llvmData.builder.getInt64(0));
 
     if (llvm.verifyFunction(mainFunc)) {
-        throw new Error('Error: LLVM IR generation: function generatation failed!');
+        throw new Error('LLVM IR generation: function generatation failed.');
     }
 }
 
-function generateVariables(variable: Definition, {builder, mainVars}: LLVMData): void {
-    if (isNumberLiteral(variable.expr)) {
-        const floatAlloca = builder.CreateAlloca(builder.getDoubleTy(), null, variable.name);
-        builder.CreateStore(llvm.ConstantFP.get(builder.getDoubleTy(), variable.expr.value), floatAlloca);
-        mainVars.set(variable.name, floatAlloca);
-    }
+function generateVariables(variable: Definition, llvmData: LLVMData): void {
+    const { builder, mainVars } = llvmData;
+
+    const result = generateExpression(variable.expr, llvmData, mainVars);
+
+    const floatAlloca = builder.CreateAlloca(builder.getDoubleTy(), null, variable.name);
+    builder.CreateStore(result, floatAlloca);
+    const loadedValue = builder.CreateLoad(builder.getDoubleTy(), floatAlloca);
+    llvmData.mainVars.set(variable.name, loadedValue);
 }
 
 function generateEvaluation(expr: Expression, llvmData: LLVMData): void {
-    const {module, builder, globalVars, mainVars} = llvmData;
+    const { module, builder, globalVars, mainVars } = llvmData;
 
-    const printfFn = module.getFunction('printf');
-    if (!printfFn) return;
-    const float_modifier = globalVars.get('float_modifier')!;
+    const result = generateExpression(expr, llvmData, mainVars);
+
+    const printfFn = module.getFunction('printf')!;
+    if (printfFn) {
+        builder.CreateCall(printfFn, [globalVars.get('float_modifier')!, result]);
+    } else {
+        throw new Error('LLVM IR generation: \'printf\' was not found.');
+    }
+}
+
+function generateFunction(def: Definition, llvmData: LLVMData): void {
+    const { context, module, builder } = llvmData;
+
+    const returnType = builder.getDoubleTy();
+    const paramTypes: llvm.Type[] = def.args.map(_ => builder.getDoubleTy());
+    const functionType = llvm.FunctionType.get(returnType, paramTypes, false);
+    const func = llvm.Function.Create(functionType, llvm.Function.LinkageTypes.ExternalLinkage, def.name, module);
+
+    const entryBB = llvm.BasicBlock.Create(context, 'entry', func);
+    builder.SetInsertPoint(entryBB);
+
+    const namedValues = new Map<string, llvm.Argument>();
+    for (let i = 0; i < def.args.length; i++) {
+        namedValues.set(def.args[i].name, func.getArg(i));
+    }
+    const result = generateExpression(def.expr, llvmData, namedValues);
+    builder.CreateRet(result);
+
+    if (llvm.verifyFunction(func)) {
+        throw new Error(`LLVM IR generation: function generatation failed: '${def.name}'.`);
+    }
+}
+
+function generateExpression(expr: Expression, llvmData: LLVMData, namedValues: Map<string, llvm.Value>): llvm.Value {
+    const { builder, module } = llvmData;
 
     if (isNumberLiteral(expr)) {
-        builder.CreateCall(printfFn, [float_modifier, llvm.ConstantFP.get(builder.getDoubleTy(), expr.value)]);
-    } else if (isBinaryExpression(expr)) {
-        if (expr.operator === '+' && isFunctionCall(expr.left) && isFunctionCall(expr.right) && expr.left.args.length === 0 && expr.right.args.length === 0) {
-            const a = expr.left.func.ref?.name;
-            const b = expr.right.func.ref?.name;
-            if (a && b) {
-                const allocaInstA = mainVars.get(a);
-                const allocaInstB = mainVars.get(b);
-                if (allocaInstA && allocaInstB) {
-                    const valueA = builder.CreateLoad(builder.getDoubleTy(), allocaInstA, a);
-                    const valueB = builder.CreateLoad(builder.getDoubleTy(), allocaInstB, b);
-                    const res = builder.CreateFAdd(valueA, valueB, `sum_${a}_${b}`);
-                    builder.CreateCall(printfFn, [float_modifier, res]);
+        return llvm.ConstantFP.get(builder.getDoubleTy(), expr.value);
+    } else if (isFunctionCall(expr)) {
+        const funcName = expr.func.ref?.name;
+        if (funcName) {
+            const arg = namedValues.get(funcName);
+            if (arg) {
+                return arg;
+            } else {
+                const func = module.getFunction(funcName);
+                if (func) {
+                    const args = expr.args.map(e => generateExpression(e, llvmData, namedValues));
+                    return builder.CreateCall(func, args);
                 }
+            }
+        }
+        throw new Error(`LLVM IR generation: no function '${expr.func.$refText}' [the case must be covered by the validator].`);
+    } else {
+        const left = generateExpression(expr.left, llvmData, namedValues);
+        const right = generateExpression(expr.right, llvmData, namedValues);
+        if (expr.operator === '+') {
+            return builder.CreateFAdd(left, right);
+        } else if (expr.operator === '-') {
+            return builder.CreateFSub(left, right);
+        } else if (expr.operator === '*') {
+            return builder.CreateFMul(left, right);
+        } else if (expr.operator === '/') {
+            return builder.CreateFDiv(left, right);
+        } else if (expr.operator === '%') {
+            return builder.CreateFRem(left, right);
+        } else {
+            const pow = module.getFunction('pow');
+            if (pow) {
+                return builder.CreateCall(pow, [left, right]);
+            } else {
+                throw new Error('LLVM IR generation: \'pow\' was not found.');
             }
         }
     }
 }
 
-// function generateFunction(def: Definition, llvmData: LLVMData): void {
-//     const { context, module, builder } = llvmData;
+type Entities = {
+    functions: Definition[],
+    variables: Definition[],
+    evaluations: Evaluation[]
+}
 
-//     const returnType = builder.getInt64Ty();
-//     const paramTypes: llvm.Type[] = def.args.map(_ => builder.getInt64Ty());
-//     const functionType = llvm.FunctionType.get(returnType, paramTypes, false);
-//     const func = llvm.Function.Create(functionType, llvm.Function.LinkageTypes.ExternalLinkage, def.name, module);
-
-//     const entryBB = llvm.BasicBlock.Create(context, 'main', func);
-//     builder.SetInsertPoint(entryBB);
-
-//     const str = builder.CreateGlobalStringPtr('HelloWorld', 'str', 0, module);
-//     const printfFn = llvmData.module.getFunction('printf');
-//     if (printfFn) {
-//         llvmData.builder.CreateCall(printfFn, [str], 'qwe');
-//     }
-
-//     const namedValues = new Map<string, llvm.Argument>();
-//     for (let i = 0; i < def.args.length; i++) {
-//         namedValues.set(def.args[i].name, func.getArg(i));
-//     }
-//     const result = generateExpression(def.expr, llvmData, namedValues);
-//     builder.CreateRet(result);
-
-//     if (llvm.verifyFunction(func)) {
-//         throw new Error('Error: LLVM IR generation: function generatation failed!');
-//     }
-// }
-
-// function generateExpression(expr: Expression, llvmData: LLVMData, namedValues: Map<string, llvm.Argument>): llvm.Value {
-//     if (isNumberLiteral(expr)) {
-//         return llvmData.builder.getInt64(expr.value);
-//     } else {
-//         namedValues;
-//     }
-//     throw new Error('Error: LLVM IR generation: the case must be covered by the validator!');
-// }
+function splitEntities(statements: Statement[]): Entities {
+    const res = { functions: [], variables: [], evaluations: [] } as Entities;
+    for (const stmt of statements) {
+        if (isEvaluation(stmt)) {
+            res.evaluations.push(stmt);
+        } else {
+            stmt.args.length === 0 ?
+                res.variables.push(stmt) :
+                res.functions.push(stmt);
+        }
+    }
+    return res;
+}
