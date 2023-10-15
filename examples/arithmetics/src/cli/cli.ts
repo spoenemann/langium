@@ -32,6 +32,7 @@ program
     .command('generate')
     .argument('<file>', `source file (possible file extensions: ${ArithmeticsLanguageMetaData.fileExtensions.join(', ')}`)
     .option('-d, --destination <dir>', 'generating destination directory')
+    .option('-r, --return', 'the main function returns the last evaluation as a value')
     .description('generates LLVM IR for a source file')
     .action(generateAction);
 

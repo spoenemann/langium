@@ -21,7 +21,7 @@ const CustomLLVMConfig = {
     TARGET_TRIPLE: 'arm64-apple-macosx14.0.0'
 };
 
-export function generateLLVMIR(exprSet: Module, fileName: string): string {
+export function generateLLVMIR(exprSet: Module, fileName: string, hasReturnValue: boolean): string {
     const context = new llvm.LLVMContext();
 
     const module = new llvm.Module(fileName, context);
@@ -37,7 +37,7 @@ export function generateLLVMIR(exprSet: Module, fileName: string): string {
     setupExternFunctions(llvmData);
 
     const fileNode = new CompositeGeneratorNode();
-    fileNode.append(generateLLVMIRinternal(exprSet.statements, llvmData));
+    fileNode.append(generateLLVMIRinternal(exprSet.statements, llvmData, hasReturnValue));
 
     return toString(fileNode);
 }
@@ -61,10 +61,10 @@ function setupExternFunctions(llvmData: LLVMData) {
     ));
 }
 
-function generateLLVMIRinternal(statements: Statement[], llvmData: LLVMData): string {
+function generateLLVMIRinternal(statements: Statement[], llvmData: LLVMData, hasReturnValue: boolean): string {
     const { functions, variables, evaluations } = splitEntities(statements);
     functions.forEach(func => generateFunction(func, llvmData));
-    generateMainFunction(variables, evaluations, llvmData);
+    generateMainFunction(variables, evaluations, llvmData, hasReturnValue);
 
     if (llvm.verifyModule(llvmData.module)) {
         return 'Verifying module failed';
@@ -72,8 +72,8 @@ function generateLLVMIRinternal(statements: Statement[], llvmData: LLVMData): st
     return llvmData.module.print();
 }
 
-function generateMainFunction(variables: Definition[], evaluations: Evaluation[], llvmData: LLVMData): void {
-    const { context, module, builder } = llvmData;
+function generateMainFunction(variables: Definition[], evaluations: Evaluation[], llvmData: LLVMData, hasReturnValue: boolean): void {
+    const { context, module, builder, mainVars } = llvmData;
 
     const returnType = builder.getInt64Ty();
     const functionType = llvm.FunctionType.get(returnType, [], false);
@@ -83,9 +83,16 @@ function generateMainFunction(variables: Definition[], evaluations: Evaluation[]
     builder.SetInsertPoint(entryBB);
 
     variables.forEach(v => generateVariables(v, llvmData));
+
+    let returnValue: Expression | undefined = undefined;
+    if (hasReturnValue) {
+        returnValue = evaluations.pop()?.expression;
+    }
     evaluations.forEach(e => generateEvaluation(e.expression, llvmData));
 
-    builder.CreateRet(llvmData.builder.getInt64(0));
+    builder.CreateRet(returnValue ?
+        builder.CreateFPToSI(generateExpression(returnValue, llvmData, mainVars), builder.getInt64Ty()) :
+        builder.getInt64(0));
 
     if (llvm.verifyFunction(mainFunc)) {
         throw new Error('LLVM IR generation: function generatation failed.');

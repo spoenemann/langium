@@ -17,6 +17,7 @@ import * as fs from 'node:fs';
 type GenerateOptions = {
     destination?: string;
     target?: 'llvmir';
+    return?: boolean;
 }
 
 export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
@@ -30,7 +31,7 @@ export const generateAction = async (fileName: string, opts: GenerateOptions): P
 
     if (opts.target === undefined || opts.target === 'llvmir') {
         const generatedFilePath = `${path.join(filePathData.destination, filePathData.name)}.ll`;
-        const fileContent = generateLLVMIR(module, fileName);
+        const fileContent = generateLLVMIR(module, fileName, opts.return ?? false);
         if (fileContent !== 'error') {
             fs.writeFileSync(generatedFilePath, fileContent);
             console.log(chalk.green(`LLVM IR code generated successfully: ${generatedFilePath}`));
