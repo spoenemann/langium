@@ -31,9 +31,10 @@ program
 program
     .command('generate')
     .argument('<file>', `source file (possible file extensions: ${ArithmeticsLanguageMetaData.fileExtensions.join(', ')}`)
+    .option('-t, --target <ll | py>', 'generation of LLVM IR or Python')
     .option('-d, --destination <dir>', 'generating destination directory')
     .option('-r, --return', 'the main function returns the last evaluation as a value')
-    .description('generates LLVM IR for a source file')
+    .description('generates code for a source file')
     .action(generateAction);
 
 program.parse(process.argv);

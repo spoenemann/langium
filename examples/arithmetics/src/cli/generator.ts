@@ -16,7 +16,7 @@ import * as fs from 'node:fs';
 
 type GenerateOptions = {
     destination?: string;
-    target?: 'llvmir';
+    target?: 'll' | 'py';
     return?: boolean;
 }
 
@@ -29,7 +29,7 @@ export const generateAction = async (fileName: string, opts: GenerateOptions): P
         fs.mkdirSync(filePathData.destination, { recursive: true });
     }
 
-    if (opts.target === undefined || opts.target === 'llvmir') {
+    if (opts.target === undefined || opts.target === 'll') {
         const generatedFilePath = `${path.join(filePathData.destination, filePathData.name)}.ll`;
         const fileContent = generateLLVMIR(module, fileName, opts.return ?? false);
         if (fileContent !== 'error') {
@@ -37,6 +37,15 @@ export const generateAction = async (fileName: string, opts: GenerateOptions): P
             console.log(chalk.green(`LLVM IR code generated successfully: ${generatedFilePath}`));
         } else {
             console.log(chalk.red('LLVM IR code generation failed!'));
+        }
+    } else if (opts.target === 'py') {
+        const generatedFilePath = `${path.join(filePathData.destination, filePathData.name)}.py`;
+        const fileContent = generatePython(module, fileName, opts.return ?? false);
+        if (fileContent !== 'error') {
+            fs.writeFileSync(generatedFilePath, fileContent);
+            console.log(chalk.green(`Python code generated successfully: ${generatedFilePath}`));
+        } else {
+            console.log(chalk.red('Python code generation failed!'));
         }
     }
 };
